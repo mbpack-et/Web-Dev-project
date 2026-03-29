@@ -11,7 +11,7 @@ This project is built as a full-stack application using Angular (frontend) and D
 <div align="center">
 <kbd>
 
-  <img src="https://animesher.com/orig/0/67/671/6718/animesher.com_reading-manga-animer-gif-671838.gif" width="500"/>
+  <img src="https://image.myanimelist.net/ui/aLzWa1AdfbM7yOgXZ45LWZ6mrL19J_OUf49UgZPgSd6mjfrQpEdGyPdVkEZHOoo_" width="500"/>
 </a>
 </kbd>
 
