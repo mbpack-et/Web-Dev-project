@@ -1,18 +1,18 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
-import { MangaStoreService } from './manga-store.service';
+import { AuthService } from '../auth.service';
 
 export const authGuard: CanActivateFn = () => {
-  const store = inject(MangaStoreService);
+  const authService = inject(AuthService);
   const router = inject(Router);
 
-  return store.isAuthenticated() ? true : router.createUrlTree(['/login']);
+  return authService.isLoggedIn() ? true : router.createUrlTree(['/login']);
 };
 
 export const loginRedirectGuard: CanActivateFn = () => {
-  const store = inject(MangaStoreService);
+  const authService = inject(AuthService);
   const router = inject(Router);
 
-  return store.isAuthenticated() ? router.createUrlTree(['/app']) : true;
+  return authService.isLoggedIn() ? router.createUrlTree(['/app']) : true;
 };

@@ -1,27 +1,44 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import {
-  ApiFilterOption,
   FRIENDS_LIST,
   FriendEntry,
-  MangaDetailResponse,
   MangaEntry,
-  MangaListResponse,
   MangaStatus,
   PanelTone
 } from './manga-data';
-
-const API_BASE_PATH = '/api/mangahook';
+const API_BASE_PATH = '/api';
 const ACCENT_ROTATION: readonly PanelTone[] = ['plum', 'indigo', 'sky', 'gold'];
+const PAGE_SIZE = 12;
+
+interface ApiGenre {
+  name: string;
+}
+
+interface ApiManga {
+  id: number;
+  title: string;
+  genres: ApiGenre[];
+  status: 'ONGOING' | 'COMPLETED' | 'HIATUS';
+  summary: string;
+  rating: number;
+  chapters: number;
+  published: string;
+  author: string;
+  created_at: string;
+}
+
+interface ApiReadingListItem {
+  manga: string;
+  status: 'PLANNED' | 'READING' | 'COMPLETED';
+}
 
 @Injectable({ providedIn: 'root' })
 export class MangaStoreService {
   private readonly http = inject(HttpClient);
-
-  readonly isAuthenticated = signal(false);
   readonly userName = signal('Mina Sato');
 
   readonly mangaLibrary = signal<MangaEntry[]>([]);
@@ -31,8 +48,6 @@ export class MangaStoreService {
   readonly totalPages = signal(1);
   readonly selectedGenre = signal('All Genres');
   readonly loadedOnce = signal(false);
-
-  private readonly availableCategoryOptions = signal<ApiFilterOption[]>([]);
 
   readonly friends = computed<FriendEntry[]>(() => {
     const library = this.mangaLibrary();
@@ -44,11 +59,9 @@ export class MangaStoreService {
   });
 
   readonly genreOptions = computed(() => {
-    const categories = this.availableCategoryOptions()
-      .map((option) => this.getOptionLabel(option))
-      .filter(Boolean)
-      .filter((name) => name.toUpperCase() !== 'ALL');
-
+    const categories = [
+      ...new Set(this.mangaLibrary().flatMap((item) => item.genre).filter((genre) => genre !== 'Unknown'))
+    ];
     return ['All Genres', ...categories];
   });
 
@@ -72,18 +85,14 @@ export class MangaStoreService {
       .slice(0, 3);
   });
 
-  login(userName: string, password: string): boolean {
-    if (!userName.trim() || !password.trim()) {
-      return false;
+  setUserName(userName: string): void {
+    if (userName.trim()) {
+      this.userName.set(userName.trim());
     }
-
-    this.userName.set(userName.trim());
-    this.isAuthenticated.set(true);
-    return true;
   }
 
   logout(): void {
-    this.isAuthenticated.set(false);
+    this.afterLogout();
   }
 
   ensureCatalogLoaded(): void {
@@ -99,111 +108,63 @@ export class MangaStoreService {
     this.errorMessage.set('');
     this.selectedGenre.set(genre);
 
-    let params = new HttpParams().set('page', String(page));
-    const apiGenre = genre === 'All Genres' ? null : genre;
+    forkJoin({
+      manga: this.http.get<ApiManga[]>(`${API_BASE_PATH}/manga/`),
+      readingList: this.http
+        .get<ApiReadingListItem[]>(`${API_BASE_PATH}/reading-list/`)
+        .pipe(catchError(() => of([])))
+    }).subscribe({
+      next: ({ manga, readingList }) => {
+        const allEntries = manga.map((item, index) => this.toMangaEntry(item, index, readingList));
+        const genreFiltered =
+          genre === 'All Genres'
+            ? allEntries
+            : allEntries.filter((item) => item.genre.includes(genre));
+        const totalPages = Math.max(1, Math.ceil(genreFiltered.length / PAGE_SIZE));
+        const normalizedPage = Math.min(Math.max(page, 1), totalPages);
+        const start = (normalizedPage - 1) * PAGE_SIZE;
+        const end = start + PAGE_SIZE;
 
-    if (apiGenre) {
-      params = params.set('category', apiGenre);
-    }
-
-    this.http
-      .get<MangaListResponse>(`${API_BASE_PATH}/mangaList`, { params })
-      .subscribe({
-        next: (response) => {
-          this.availableCategoryOptions.set(response.metaData.category ?? []);
-          this.totalPages.set(response.metaData.totalPages ?? 1);
-          this.currentPage.set(page);
-
-          const detailRequests = response.mangaList.map((item, index) =>
-            this.http
-              .get<MangaDetailResponse>(`${API_BASE_PATH}/manga/${item.id}`)
-              .pipe(
-                catchError(() =>
-                  of({
-                    imageUrl: item.image,
-                    name: item.title,
-                    author: 'Unknown author',
-                    status: 'Ongoing',
-                    updated: `Updated: ${new Date().getFullYear()}`,
-                    view: item.view,
-                    genres: apiGenre ? [apiGenre] : [],
-                    chapterList: []
-                  } satisfies MangaDetailResponse)
-                ),
-                catchError(() => of(null))
-              )
-          );
-
-          if (!detailRequests.length) {
-            this.mangaLibrary.set([]);
-            this.loadedOnce.set(true);
-            this.isLoading.set(false);
-            return;
-          }
-
-          forkJoin(detailRequests).subscribe({
-            next: (details) => {
-              this.mangaLibrary.set(
-                response.mangaList.map((item, index) =>
-                  this.toMangaEntry(item, details[index] ?? null, index)
-                )
-              );
-              this.loadedOnce.set(true);
-              this.isLoading.set(false);
-            },
-            error: () => {
-              this.mangaLibrary.set([]);
-              this.loadedOnce.set(true);
-              this.isLoading.set(false);
-              this.errorMessage.set(
-                'The MangaHook catalog loaded, but item details could not be enriched.'
-              );
-            }
-          });
-        },
-        error: () => {
-          this.mangaLibrary.set([]);
-          this.totalPages.set(1);
-          this.loadedOnce.set(true);
-          this.isLoading.set(false);
-          this.errorMessage.set(
-            'MangaHook could not be reached. Start the backend on http://localhost:3000 or update the proxy target.'
-          );
-        }
-      });
+        this.mangaLibrary.set(genreFiltered.slice(start, end));
+        this.totalPages.set(totalPages);
+        this.currentPage.set(normalizedPage);
+        this.loadedOnce.set(true);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.mangaLibrary.set([]);
+        this.totalPages.set(1);
+        this.loadedOnce.set(true);
+        this.isLoading.set(false);
+        this.errorMessage.set(
+          'Django API could not be reached. Start backend and check /api/manga and /api/reading-list.'
+        );
+      }
+    });
   }
 
   byStatus(status: MangaStatus): MangaEntry[] {
     return this.mangaLibrary().filter((item) => item.status === status);
   }
 
-  private toMangaEntry(
-    summary: MangaListResponse['mangaList'][number],
-    detail: MangaDetailResponse | null,
-    index: number
-  ): MangaEntry {
-    const genres = detail?.genres?.length ? detail.genres : this.fallbackGenres(summary);
-    const popularitySource = detail?.view ?? summary.view;
-
+  private toMangaEntry(item: ApiManga, index: number, readingList: ApiReadingListItem[]): MangaEntry {
+    const readingListStatus = readingList.find((entry) => entry.manga === item.title)?.status;
+    const genres = item.genres.length ? item.genres.map((genre) => genre.name) : ['Unknown'];
     return {
-      id: summary.id,
-      title: detail?.name || summary.title,
-      image: detail?.imageUrl || summary.image,
+      id: String(item.id),
+      title: item.title,
+      image: '',
       genre: genres,
-      year: this.extractYear(detail?.updated),
-      popularity: this.parseViewCount(popularitySource),
-      chapters: detail?.chapterList?.length || this.extractChapterCount(summary.chapter),
-      status: this.deriveShelfStatus(detail?.status, index),
-      synopsis: summary.description || 'No description provided by MangaHook.',
+      year: this.extractYear(item.published || item.created_at),
+      popularity: this.parseRatingToPopularity(item.rating),
+      chapters: item.chapters,
+      status: this.mapReadingStatus(readingListStatus, item.status, index),
+      synopsis: item.summary || 'No description provided yet.',
       accent: ACCENT_ROTATION[index % ACCENT_ROTATION.length],
-      author: detail?.author || 'Unknown author',
-      updated: detail?.updated || 'Unknown update date',
-      latestChapter: summary.chapter
+      author: item.author || 'Unknown author',
+      updated: item.published || item.created_at || 'Unknown update date',
+      latestChapter: `Chapter ${item.chapters}`
     };
-  }
-
-  private getOptionLabel(option: ApiFilterOption): string {
-    return option.name ?? option.type ?? option.id;
   }
 
   private extractYear(updated?: string): number {
@@ -211,34 +172,35 @@ export class MangaStoreService {
     return matchedYear ? Number(matchedYear[0]) : new Date().getFullYear();
   }
 
-  private parseViewCount(view: string): number {
-    const normalized = view.trim().toUpperCase().replace(/,/g, '');
-    const match = normalized.match(/^([\d.]+)([KMB])?$/);
-
-    if (!match) {
-      return 0;
-    }
-
-    const value = Number(match[1]);
-    const multiplier = match[2] === 'B' ? 1_000_000_000 : match[2] === 'M' ? 1_000_000 : match[2] === 'K' ? 1_000 : 1;
-    return Math.round(value * multiplier);
+  private parseRatingToPopularity(rating: number): number {
+    return Math.round(Math.max(rating, 0) * 1000);
   }
 
-  private extractChapterCount(chapterLabel: string): number {
-    const matchedChapter = chapterLabel.match(/(\d+(?:\.\d+)?)/);
-    return matchedChapter ? Math.round(Number(matchedChapter[1])) : 0;
-  }
-
-  private fallbackGenres(summary: MangaListResponse['mangaList'][number]): string[] {
-    const selectedGenre = this.selectedGenre();
-    return selectedGenre === 'All Genres' ? ['Unknown'] : [selectedGenre];
-  }
-
-  private deriveShelfStatus(sourceStatus: string | undefined, index: number): MangaStatus {
-    if (sourceStatus?.toLowerCase().includes('completed')) {
+  private mapReadingStatus(
+    readingStatus: ApiReadingListItem['status'] | undefined,
+    mangaStatus: ApiManga['status'],
+    index: number
+  ): MangaStatus {
+    if (readingStatus === 'COMPLETED' || mangaStatus === 'COMPLETED') {
       return 'Completed';
     }
 
+    if (readingStatus === 'READING') {
+      return 'Reading';
+    }
+
+    if (readingStatus === 'PLANNED') {
+      return 'Plan to Read';
+    }
+
     return index % 2 === 0 ? 'Reading' : 'Plan to Read';
+  }
+
+  private afterLogout(): void {
+    this.mangaLibrary.set([]);
+    this.currentPage.set(1);
+    this.totalPages.set(1);
+    this.selectedGenre.set('All Genres');
+    this.loadedOnce.set(false);
   }
 }

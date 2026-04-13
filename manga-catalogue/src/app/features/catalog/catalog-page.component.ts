@@ -82,7 +82,7 @@ type SortMode = 'Popularity' | 'Alphabetical';
         } @empty {
           <article class="empty-catalog">
             <strong>No manga matched these filters</strong>
-            <p>Try another genre, another year, or wait for the MangaHook feed to load.</p>
+            <p>Try another genre, another year, or add more manga via the Django API.</p>
           </article>
         }
       </section>

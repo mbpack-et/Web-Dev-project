@@ -89,8 +89,7 @@ import { PanelCardComponent } from '../../shared/panel-card.component';
           <p class="eyebrow">Dashboard Waiting</p>
           <h2>No live manga loaded yet</h2>
           <p>
-            This dashboard will populate from MangaHook as soon as the API proxy can reach a
-            running backend.
+            This dashboard will populate as soon as the Django API is running and has manga data.
           </p>
         </section>
       }

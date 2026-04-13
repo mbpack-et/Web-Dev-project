@@ -70,7 +70,7 @@ import { SegmentedControlComponent } from '../../shared/segmented-control.compon
             } @empty {
               <article class="empty-list">
                 <strong>No manga in this shelf yet</strong>
-                <p>Once MangaHook data is available, your mocked reading states will appear here.</p>
+                <p>Add manga to your reading list from the Django backend and refresh the catalog.</p>
               </article>
             }
           </div>

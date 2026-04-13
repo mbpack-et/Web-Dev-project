@@ -10,6 +10,15 @@ This repository now includes an Angular frontend and a Django + Django REST Fram
 
 The backend supports JWT authentication, manga CRUD, reviews, and user reading lists. See `manga-catalogue/backend/README.md` for setup instructions.
 
+## Project Structure
+
+- `manga-catalogue/` - Angular app (frontend)
+- `manga-catalogue/src/app/features/` - main pages (`login`, `dashboard`, `profile`, `catalog`)
+- `manga-catalogue/src/app/core/` - auth guard + data store service
+- `manga-catalogue/backend/` - Django + DRF backend
+- `manga-catalogue/backend/catalog/` - models, serializers, views, urls
+- `manga-catalogue/backend/mangabackend/` - Django project settings and root urls
+
 <div align="center">
 <kbd>
 

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
+import { AuthService } from '../../auth.service';
 import { MangaStoreService } from '../../core/manga-store.service';
 
 @Component({
@@ -170,6 +171,7 @@ import { MangaStoreService } from '../../core/manga-store.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoginPageComponent {
+  private readonly authService = inject(AuthService);
   private readonly store = inject(MangaStoreService);
   private readonly router = inject(Router);
 
@@ -178,15 +180,21 @@ export class LoginPageComponent {
   readonly errorMessage = signal('');
 
   submit(): void {
-    const loggedIn = this.store.login(this.userName, this.password);
-
-    if (!loggedIn) {
+    if (!this.userName.trim() || !this.password.trim()) {
       this.errorMessage.set('Add both a username and password to continue.');
       return;
     }
 
-    this.errorMessage.set('');
-    this.store.ensureCatalogLoaded();
-    void this.router.navigateByUrl('/app');
+    this.authService.login(this.userName, this.password).subscribe({
+      next: () => {
+        this.errorMessage.set('');
+        this.store.setUserName(this.userName);
+        this.store.ensureCatalogLoaded();
+        void this.router.navigateByUrl('/app');
+      },
+      error: () => {
+        this.errorMessage.set('Login failed. Check username/password and try again.');
+      }
+    });
   }
 }

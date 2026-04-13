@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 
+import { AuthService } from '../../auth.service';
 import { MangaStoreService } from '../../core/manga-store.service';
 import { NavLinkComponent } from '../../shared/nav-link.component';
 
@@ -28,7 +29,7 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
       </header>
 
       @if (store.isLoading()) {
-        <p class="status-banner">Syncing manga from MangaHook...</p>
+        <p class="status-banner">Syncing manga from Django API...</p>
       }
 
       @if (store.errorMessage()) {
@@ -151,6 +152,7 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
 })
 export class ShellComponent implements OnInit {
   readonly store = inject(MangaStoreService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
   ngOnInit(): void {
@@ -158,7 +160,15 @@ export class ShellComponent implements OnInit {
   }
 
   logout(): void {
-    this.store.logout();
-    void this.router.navigateByUrl('/login');
+    this.authService.logout().subscribe({
+      next: () => {
+        this.store.logout();
+        void this.router.navigateByUrl('/login');
+      },
+      error: () => {
+        this.store.logout();
+        void this.router.navigateByUrl('/login');
+      }
+    });
   }
 }
