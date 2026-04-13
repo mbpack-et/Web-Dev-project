@@ -1,0 +1,65 @@
+{% extends "catalog/shell.html" %}
+
+{% block title %}Profile | Manga Catalog System{% endblock %}
+
+{% block shell_content %}
+<main class="page-stack">
+    <section class="page-header">
+        <p class="eyebrow">User Profile</p>
+        <h1>{{ catalog_user }}</h1>
+        <p>Keep up with friends, switch between reading statuses, and manage the manga already inside your list.</p>
+    </section>
+
+    <section class="profile-grid">
+        <article class="panel-card tone-sky">
+            <p class="eyebrow">Community</p>
+            <h2>Friends List</h2>
+            <p class="description">People you are currently following and what they are reading.</p>
+            <div class="friend-stack">
+                {% for friend in friends %}
+                    <article class="friend-card">
+                        <div class="avatar">{{ friend.avatar }}</div>
+                        <div>
+                            <strong>{{ friend.name }}</strong>
+                            <p>{{ friend.handle }}</p>
+                        </div>
+                        <span>{{ friend.currently_reading }}</span>
+                    </article>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="panel-card tone-plum">
+            <p class="eyebrow">Collection</p>
+            <h2>My Manga List</h2>
+            <p class="description">Switch the filter to see what you are reading now, what you finished, and what is queued next.</p>
+            <form method="get" class="shelf-tabs">
+                {% for shelf in shelf_options %}
+                    <button type="submit" name="shelf" value="{{ shelf }}" class="segment {% if selected_shelf == shelf %}is-active{% endif %}">
+                        {{ shelf }}
+                    </button>
+                {% endfor %}
+            </form>
+            <div class="manga-stack">
+                {% for item in my_manga %}
+                    <article class="manga-row">
+                        <div>
+                            <strong>{{ item.title }}</strong>
+                            <p>{{ item.genres|join:" / " }}</p>
+                        </div>
+                        <div class="manga-metrics">
+                            <span>{{ item.year }}</span>
+                            <span>{{ item.chapters }} ch</span>
+                        </div>
+                    </article>
+                {% empty %}
+                    <article class="empty-list">
+                        <strong>No manga in this shelf yet</strong>
+                        <p>Once MangaHook responds, your mocked shelf statuses will appear here.</p>
+                    </article>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+</main>
+{% endblock %}

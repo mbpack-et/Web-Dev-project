@@ -1,0 +1,76 @@
+{% extends "catalog/shell.html" %}
+
+{% block title %}Catalog | Manga Catalog System{% endblock %}
+
+{% block shell_content %}
+<main class="page-stack">
+    <section class="catalog-header">
+        <div>
+            <p class="eyebrow">Manga Catalog</p>
+            <h1>All Manga List</h1>
+            <p class="subcopy">Browse the full library, filter by genre or year, and switch between popularity and alphabetical order.</p>
+        </div>
+        <div class="catalog-stats">
+            <strong>{{ entries|length }}</strong>
+            <span>series shown</span>
+        </div>
+    </section>
+
+    <form method="get" class="filter-stack">
+        <label>
+            <span class="control-label">Genre</span>
+            <select name="genre">
+                {% for option in genre_options %}
+                    <option value="{{ option }}" {% if option == selected_genre %}selected{% endif %}>{{ option }}</option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>
+            <span class="control-label">Year</span>
+            <select name="year">
+                {% for option in year_options %}
+                    <option value="{{ option }}" {% if option == selected_year %}selected{% endif %}>{{ option }}</option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>
+            <span class="control-label">Sort By</span>
+            <select name="sort">
+                <option value="Popularity" {% if selected_sort == 'Popularity' %}selected{% endif %}>Popularity</option>
+                <option value="Alphabetical" {% if selected_sort == 'Alphabetical' %}selected{% endif %}>Alphabetical</option>
+            </select>
+        </label>
+
+        <input type="hidden" name="page" value="1">
+        <button type="submit" class="filter-submit">Apply Filters</button>
+    </form>
+
+    <section class="pagination-bar">
+        <a href="?{{ previous_query }}" class="page-link {% if current_page == 1 %}is-disabled{% endif %}">Previous</a>
+        <span>Page {{ current_page }} / {{ total_pages }}</span>
+        <a href="?{{ next_query }}" class="page-link {% if current_page >= total_pages %}is-disabled{% endif %}">Next</a>
+    </section>
+
+    <section class="catalog-grid">
+        {% for item in entries %}
+            <article class="panel-card tone-{{ item.accent }}">
+                <p class="eyebrow">{{ item.shelf_status }}</p>
+                <h2>{{ item.title }}</h2>
+                <p class="description">{{ item.synopsis }}</p>
+                <div class="catalog-card-meta">
+                    <span>{{ item.genres|join:" / " }}</span>
+                    <span>{{ item.year }}</span>
+                    <span>Popularity {{ item.popularity }}</span>
+                </div>
+            </article>
+        {% empty %}
+            <article class="empty-catalog">
+                <strong>No manga matched these filters</strong>
+                <p>Try another genre, another year, or wait for the MangaHook feed to load.</p>
+            </article>
+        {% endfor %}
+    </section>
+</main>
+{% endblock %}

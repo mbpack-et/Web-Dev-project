@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "analytics": "1f5766a4-759a-4981-afe6-e555d472bfa9"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -69,7 +70,8 @@
               "buildTarget": "manga-catalogue:build:production"
             },
             "development": {
-              "buildTarget": "manga-catalogue:build:development"
+              "buildTarget": "manga-catalogue:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

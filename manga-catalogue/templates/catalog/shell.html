@@ -1,0 +1,26 @@
+{% extends "catalog/base.html" %}
+
+{% block body %}
+<div class="shell">
+    <header class="app-header">
+        <a href="{% url 'catalog:dashboard' %}" class="brand">
+            <span class="brand-mark">MC</span>
+            <span>
+                <strong>Manga Catalog System</strong>
+                <small>{{ catalog_user }}</small>
+            </span>
+        </a>
+        <nav class="app-nav" aria-label="Primary navigation">
+            <a href="{% url 'catalog:profile' %}" class="nav-link {% if active_page == 'profile' %}is-active{% endif %}">Profile</a>
+            <a href="{% url 'catalog:catalog' %}" class="nav-link {% if active_page == 'catalog' %}is-active{% endif %}">All Manga List</a>
+        </nav>
+        <a href="{% url 'catalog:logout' %}" class="logout-link">Logout</a>
+    </header>
+
+    {% if error_message %}
+        <p class="error-banner">{{ error_message }}</p>
+    {% endif %}
+
+    {% block shell_content %}{% endblock %}
+</div>
+{% endblock %}

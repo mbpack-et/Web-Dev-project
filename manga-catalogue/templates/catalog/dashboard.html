@@ -1,0 +1,76 @@
+{% extends "catalog/shell.html" %}
+
+{% block title %}Dashboard | Manga Catalog System{% endblock %}
+
+{% block shell_content %}
+<main class="page-stack">
+    {% if last_manga %}
+        <section class="recent-banner">
+            <div>
+                <p class="eyebrow">Recent Activity</p>
+                <h1>Your Last Manga</h1>
+                <h2>{{ last_manga.title }}</h2>
+                <p class="banner-copy">{{ last_manga.synopsis }}</p>
+            </div>
+            <div class="banner-meta">
+                <span>{{ last_manga.shelf_status }}</span>
+                <span>{{ last_manga.genres|join:" / " }}</span>
+                <span>{{ last_manga.chapters }} chapters</span>
+            </div>
+        </section>
+
+        <section class="dashboard-grid">
+            <article class="panel-card tone-{{ popular_now.accent }}">
+                <p class="eyebrow">Featured Spotlight</p>
+                <h2>Popular Now</h2>
+                <p class="description">{{ popular_now.synopsis }}</p>
+                <div class="feature-card">
+                    <div>
+                        <p class="series-title">{{ popular_now.title }}</p>
+                        <p class="series-meta">{{ popular_now.genres|join:" / " }} • {{ popular_now.year }}</p>
+                    </div>
+                    <div class="metrics">
+                        <span>Popularity {{ popular_now.popularity }}</span>
+                        <span>{{ popular_now.chapters }} chapters</span>
+                    </div>
+                    <a href="{% url 'catalog:catalog' %}" class="inline-link">Browse the full catalog</a>
+                </div>
+            </article>
+
+            <div class="right-column">
+                <article class="panel-card tone-indigo">
+                    <p class="eyebrow">Personal Picks</p>
+                    <h2>Recommendations</h2>
+                    <p class="description">A short stack based on what you are tracking right now.</p>
+                    <div class="recommendations">
+                        {% for item in recommendations %}
+                            <article class="recommendation-item">
+                                <strong>{{ item.title }}</strong>
+                                <span>{{ item.genres.0 }} • {{ item.year }}</span>
+                            </article>
+                        {% empty %}
+                            <p class="empty-copy">Recommendations will appear after MangaHook returns data.</p>
+                        {% endfor %}
+                    </div>
+                </article>
+
+                <section class="top-hundred">
+                    <div class="triangle"></div>
+                    <div class="top-content">
+                        <p class="eyebrow">Leaderboard</p>
+                        <h2>Top 100</h2>
+                        <p>Jump straight into the ranking view and explore fan favorites.</p>
+                        <a href="{% url 'catalog:catalog' %}" class="cta-link">Open catalog</a>
+                    </div>
+                </section>
+            </div>
+        </section>
+    {% else %}
+        <section class="empty-state">
+            <p class="eyebrow">Dashboard Waiting</p>
+            <h2>No live manga loaded yet</h2>
+            <p>This Django dashboard will populate as soon as the MangaHook backend is reachable.</p>
+        </section>
+    {% endif %}
+</main>
+{% endblock %}

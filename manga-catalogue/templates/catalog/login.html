@@ -1,0 +1,30 @@
+{% extends "catalog/base.html" %}
+
+{% block title %}Login | Manga Catalog System{% endblock %}
+
+{% block body %}
+<main class="login-page">
+    <section class="login-card">
+        <div class="login-intro">
+            <p class="eyebrow">Auth Gateway</p>
+            <h1>Manga Catalog System</h1>
+            <p class="lead">Enter the Django portal to browse the MangaHook-powered catalog, your profile shelves, and the dashboard wireframe.</p>
+        </div>
+        <form method="post" class="login-form">
+            {% csrf_token %}
+            <label>
+                <span>Username</span>
+                <input type="text" name="username" value="{{ username }}" placeholder="Mina Sato">
+            </label>
+            <label>
+                <span>Password</span>
+                <input type="password" name="password" placeholder="Enter any password">
+            </label>
+            {% if error_message %}
+                <p class="error-copy">{{ error_message }}</p>
+            {% endif %}
+            <button type="submit">Enter Dashboard</button>
+        </form>
+    </section>
+</main>
+{% endblock %}

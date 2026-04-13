@@ -8,21 +8,35 @@ import express from 'express';
 import { join } from 'node:path';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
+const mangaHookBaseUrl = process.env['MANGA_HOOK_API_BASE_URL'] || 'http://localhost:3000';
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
-/**
- * Example Express Rest API endpoints can be defined here.
- * Uncomment and define endpoints as necessary.
- *
- * Example:
- * ```ts
- * app.get('/api/{*splat}', (req, res) => {
- *   // Handle API request
- * });
- * ```
- */
+app.use('/api/mangahook', async (req, res) => {
+  const upstreamUrl = new URL(
+    req.originalUrl.replace(/^\/api\/mangahook/, '/api'),
+    `${mangaHookBaseUrl}/`,
+  );
+
+  try {
+    const upstreamResponse = await fetch(upstreamUrl, {
+      method: req.method,
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+
+    res.status(upstreamResponse.status);
+    res.type(upstreamResponse.headers.get('content-type') || 'application/json');
+    res.send(await upstreamResponse.text());
+  } catch (error) {
+    res.status(502).json({
+      message: `Could not reach MangaHook at ${mangaHookBaseUrl}.`,
+      details: error instanceof Error ? error.message : 'Unknown proxy error',
+    });
+  }
+});
 
 /**
  * Serve static files from /browser
