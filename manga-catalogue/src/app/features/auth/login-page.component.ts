@@ -364,21 +364,26 @@ export class LoginPageComponent {
     if (this.isRegistering()) {
       await this.handleRegister();
     } else {
-      this.handleLogin();
+      await this.handleLogin();
     }
   }
 
-  private handleLogin(): void {
-    const loggedIn = this.store.login(this.userName, this.password);
+  private async handleLogin(): Promise<void> {
+    this.isLoading.set(true);
+    try {
+      const loggedIn = await this.store.login(this.userName, this.password);
 
-    if (!loggedIn) {
-      this.errorMessage.set('Заполни имя и пароль, чтобы открыть витрину.');
-      return;
+      if (!loggedIn) {
+        this.errorMessage.set('Не удалось войти. Проверь логин и пароль.');
+        return;
+      }
+
+      this.errorMessage.set('');
+      this.store.ensureCatalogLoaded();
+      void this.router.navigateByUrl('/app');
+    } finally {
+      this.isLoading.set(false);
     }
-
-    this.errorMessage.set('');
-    this.store.ensureCatalogLoaded();
-    void this.router.navigateByUrl('/app');
   }
 
   private async handleRegister(): Promise<void> {

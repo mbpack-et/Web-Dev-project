@@ -421,6 +421,11 @@ export class MangaDetailPageComponent implements OnInit {
   }
 
   computedRating(): string {
+    const backendRating = this.store.getAverageRating(this.mangaId);
+    if (backendRating && backendRating > 0) {
+      return backendRating.toFixed(1);
+    }
+
     const item = this.manga();
 
     if (!item) {
@@ -431,13 +436,13 @@ export class MangaDetailPageComponent implements OnInit {
     return score.toFixed(1);
   }
 
-  toggleFavorite(): void {
-    const updated = this.store.toggleFavorite(this.mangaId);
+  async toggleFavorite(): Promise<void> {
+    const updated = await this.store.toggleFavorite(this.mangaId);
     this.utilityMessage.set(updated ? 'Избранное обновлено.' : 'Для этого нужно войти.');
   }
 
-  setRating(value: number): void {
-    const updated = this.store.setUserRating(this.mangaId, value);
+  async setRating(value: number): Promise<void> {
+    const updated = await this.store.setUserRating(this.mangaId, value);
     this.utilityMessage.set(updated ? `Ваш рейтинг: ${value}/5.` : 'Для этого нужно войти.');
   }
 }

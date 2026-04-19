@@ -7,6 +7,22 @@
       "^/api": "/api"
     }
   },
+  "/api/manga": {
+    "target": "http://127.0.0.1:8000",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api": "/api"
+    }
+  },
+  "/api/reading-list": {
+    "target": "http://127.0.0.1:8000",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api": "/api"
+    }
+  },
   "/api/mangahook": {
     "target": "http://localhost:3000",
     "secure": false,

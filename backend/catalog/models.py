@@ -34,6 +34,7 @@ class Manga(models.Model):
         ('HIATUS', 'Hiatus'),
     ]
 
+    external_id = models.CharField(max_length=255, unique=True, blank=True)
     title = models.CharField(max_length=255)
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='manga')
     genres = models.ManyToManyField(Genre, related_name='manga')
@@ -42,6 +43,7 @@ class Manga(models.Model):
     rating = models.FloatField(default=0.0)
     chapters = models.PositiveIntegerField(default=0)
     published = models.CharField(max_length=100, blank=True)
+    cover_image = models.URLField(blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_manga')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -59,6 +61,9 @@ class Review(models.Model):
     score = models.PositiveSmallIntegerField(choices=RATING_CHOICES)
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('manga', 'user')
 
     def __str__(self):
         return f'{self.user} review for {self.manga}'

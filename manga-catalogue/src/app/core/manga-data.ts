@@ -67,6 +67,49 @@ export interface MangaDetailResponse {
   }>;
 }
 
+export interface AuthResponse {
+  user: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  tokens: {
+    refresh: string;
+    access: string;
+  };
+}
+
+export interface ReadingListEntryResponse {
+  id: number;
+  status: 'PLANNED' | 'READING' | 'COMPLETED';
+  manga_id: number;
+  manga_external_id: string;
+  manga_title: string;
+  manga_cover_image: string;
+  added_at: string;
+}
+
+export interface ReviewEntryResponse {
+  id: number;
+  manga_title: string;
+  manga_external_id: string;
+  user: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  score: number;
+  comment: string;
+  created_at: string;
+}
+
+export interface ReviewSummaryResponse {
+  reviews: ReviewEntryResponse[];
+  average_score: number | null;
+  reviews_count: number;
+  user_review?: ReviewEntryResponse | null;
+}
+
 export const FRIENDS_LIST: FriendEntry[] = [
   {
     id: 1,
