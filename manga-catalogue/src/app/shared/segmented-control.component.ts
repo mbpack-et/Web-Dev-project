@@ -32,7 +32,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 
       .control-label {
         margin: 0;
-        color: rgba(66, 38, 117, 0.85);
+        color: rgba(246, 247, 251, 0.7);
         font-size: 0.85rem;
         font-weight: 700;
         text-transform: uppercase;
@@ -51,17 +51,18 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       }
 
       .segment {
-        border: 0;
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 999px;
         padding: 0.72rem 1rem;
-        background: rgba(255, 255, 255, 0.74);
-        color: #4e287f;
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(246, 247, 251, 0.78);
         font: inherit;
         font-weight: 700;
         cursor: pointer;
         transition:
           transform 180ms ease,
           background-color 180ms ease,
+          border-color 180ms ease,
           color 180ms ease,
           box-shadow 180ms ease;
       }
@@ -69,12 +70,15 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       .segment:hover,
       .segment:focus-visible {
         transform: translateY(-1px);
-        box-shadow: 0 0.8rem 1.4rem rgba(80, 44, 139, 0.14);
+        border-color: rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 12px 20px rgba(0, 0, 0, 0.18);
       }
 
       .segment.is-active {
-        background: #4f2c81;
-        color: #fff9fd;
+        border-color: rgba(79, 140, 255, 0.34);
+        background: rgba(79, 140, 255, 0.18);
+        color: #ffffff;
       }
     `
   ],

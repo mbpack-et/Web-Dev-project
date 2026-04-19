@@ -21,29 +21,35 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 0.75rem 1rem;
+        min-height: 2.9rem;
+        padding: 0.75rem 1.15rem;
         border-radius: 999px;
-        color: rgba(255, 247, 237, 0.82);
+        border: 1px solid transparent;
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(246, 247, 251, 0.82);
         text-decoration: none;
-        font-weight: 600;
+        font-weight: 700;
         letter-spacing: 0.02em;
         transition:
           transform 180ms ease,
+          border-color 180ms ease,
           background-color 180ms ease,
-          color 180ms ease;
+          color 180ms ease,
+          box-shadow 180ms ease;
       }
 
       .nav-link:hover,
       .nav-link:focus-visible {
-        background: rgba(255, 255, 255, 0.12);
-        color: #fffaf6;
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.08);
+        color: #ffffff;
         transform: translateY(-1px);
       }
 
       .nav-link.is-active {
-        background: rgba(82, 46, 138, 0.92);
+        background: linear-gradient(135deg, #4f8cff, #3873f0);
         color: #fff;
-        box-shadow: 0 1rem 2rem rgba(39, 14, 72, 0.18);
+        box-shadow: 0 14px 28px rgba(53, 105, 220, 0.34);
       }
     `
   ],

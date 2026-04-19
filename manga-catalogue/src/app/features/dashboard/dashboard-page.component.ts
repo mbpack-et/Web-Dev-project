@@ -1,96 +1,185 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { MangaEntry } from '../../core/manga-data';
 import { MangaStoreService } from '../../core/manga-store.service';
-import { PanelCardComponent } from '../../shared/panel-card.component';
 
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [PanelCardComponent, RouterLink],
+  imports: [RouterLink],
   template: `
     <section class="dashboard-page">
-      @if (lastManga(); as activeManga) {
-        <section class="recent-banner">
-          <div>
-            <p class="eyebrow">Recent Activity</p>
-            <h1>Your Last Manga</h1>
-            <h2>{{ activeManga.title }}</h2>
-            <p class="banner-copy">{{ activeManga.synopsis }}</p>
+      @if (featuredManga(); as featured) {
+        <section class="hero-section">
+          <div class="hero-copy">
+            <p class="eyebrow">Популярное сегодня</p>
+            <h1>{{ featured.title }}</h1>
+            <p class="hero-summary">{{ featured.synopsis }}</p>
+
+            <div class="hero-tags">
+              <span>{{ featured.genre.join(' / ') }}</span>
+              <span>{{ featured.author }}</span>
+              <span>{{ featured.chapters }} глав</span>
+              <span>{{ compactViews(featured) }} просмотров</span>
+            </div>
+
+            <div class="hero-actions">
+              <a routerLink="/app/catalog" class="primary-link">Открыть каталог</a>
+              <a [routerLink]="['/app/title', featured.id]" class="secondary-link">Страница тайтла</a>
+            </div>
           </div>
 
-          <div class="banner-meta">
-            <span>{{ activeManga.status }}</span>
-            <span>{{ activeManga.genre.join(' / ') }}</span>
-            <span>{{ activeManga.chapters }} chapters</span>
-          </div>
+          <a class="hero-visual" [routerLink]="['/app/title', featured.id]">
+            <img [src]="featured.image" [alt]="featured.title" loading="eager" />
+
+            <div class="hero-overlay">
+              <span>{{ featured.updated }}</span>
+              <strong>{{ featured.latestChapter }}</strong>
+              <small>Рейтинг {{ ratingFor(featured) }}</small>
+            </div>
+          </a>
         </section>
 
-        <section class="dashboard-grid">
-          @if (popularNow(); as popularTitle) {
-            <app-panel-card
-              class="popular-column"
-              eyebrow="Featured Spotlight"
-              title="Popular Now"
-              [description]="popularTitle.synopsis"
-              [tone]="popularTitle.accent"
-            >
-              <div class="feature-card">
-                <div>
-                  <p class="series-title">{{ popularTitle.title }}</p>
-                  <p class="series-meta">
-                    {{ popularTitle.genre.join(' / ') }} • {{ popularTitle.year }}
-                  </p>
-                </div>
-
-                <div class="metrics">
-                  <span>Popularity {{ popularTitle.popularity }}</span>
-                  <span>{{ popularTitle.chapters }} chapters</span>
-                </div>
-
-                <a routerLink="/app/catalog" class="inline-link">Browse the full catalog</a>
+        <section class="poster-track">
+          @for (item of spotlightShelf(); track item.id) {
+            <a class="poster-card compact card-link" [routerLink]="['/app/title', item.id]">
+              <div class="poster-frame">
+                <img [src]="item.image" [alt]="item.title" loading="lazy" />
+                <span class="rating-badge">&#9733; {{ ratingFor(item) }}</span>
               </div>
-            </app-panel-card>
+              <p class="poster-meta">{{ item.year }} · {{ firstGenre(item) }}</p>
+              <h3>{{ item.title }}</h3>
+            </a>
           }
+        </section>
 
-          <div class="right-column">
-            <app-panel-card
-              eyebrow="Personal Picks"
-              title="Recommendations"
-              description="A short stack based on what you are tracking right now."
-              tone="indigo"
-              [compact]="true"
-            >
-              <div class="recommendations">
-                @for (item of recommendations(); track item.id) {
-                  <article class="recommendation-item">
-                    <strong>{{ item.title }}</strong>
-                    <span>{{ item.genre[0] }} • {{ item.year }}</span>
-                  </article>
-                } @empty {
-                  <p class="empty-copy">Recommendations will appear once the catalog sync completes.</p>
+        <section class="content-layout">
+          <div class="content-main">
+            <section class="content-section">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Подборка дня</p>
+                  <h2>Горячие новинки</h2>
+                </div>
+                <a routerLink="/app/catalog">Смотреть всё</a>
+              </div>
+
+              <div class="poster-row">
+                @for (item of hotReleases(); track item.id) {
+                  <a class="poster-card card-link" [routerLink]="['/app/title', item.id]">
+                    <div class="poster-frame">
+                      <img [src]="item.image" [alt]="item.title" loading="lazy" />
+                      <span class="rating-badge">&#9733; {{ ratingFor(item) }}</span>
+                    </div>
+                    <p class="poster-meta">{{ item.year }} · {{ firstGenre(item) }}</p>
+                    <h3>{{ item.title }}</h3>
+                  </a>
                 }
               </div>
-            </app-panel-card>
+            </section>
 
-            <section class="top-hundred">
-              <div class="triangle"></div>
-              <div class="top-content">
-                <p class="eyebrow">Leaderboard</p>
-                <h2>Top 100</h2>
-                <p>Jump straight into the ranking view and explore fan favorites.</p>
-                <a routerLink="/app/catalog" class="cta-link">Open catalog</a>
+            <section class="content-section">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Сильные позиции</p>
+                  <h2>Популярное сейчас</h2>
+                </div>
+                <a routerLink="/app/profile">Мои подборки</a>
+              </div>
+
+              <div class="poster-row">
+                @for (item of popularShelf(); track item.id) {
+                  <a class="poster-card card-link" [routerLink]="['/app/title', item.id]">
+                    <div class="poster-frame">
+                      <img [src]="item.image" [alt]="item.title" loading="lazy" />
+                      <span class="rating-badge">&#9733; {{ ratingFor(item) }}</span>
+                    </div>
+                    <p class="poster-meta">{{ item.year }} · {{ firstGenre(item) }}</p>
+                    <h3>{{ item.title }}</h3>
+                  </a>
+                }
+              </div>
+            </section>
+
+            <section class="updates-section">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Обновления</p>
+                  <h2>Свежие главы</h2>
+                </div>
+              </div>
+
+              <div class="updates-grid">
+                @for (item of updateFeed(); track item.id) {
+                  <a class="update-card card-link" [routerLink]="['/app/title', item.id]">
+                    <img [src]="item.image" [alt]="item.title" loading="lazy" />
+                    <div class="update-copy">
+                      <p>{{ firstGenre(item) }} · {{ item.year }}</p>
+                      <h3>{{ item.title }}</h3>
+                      <span>{{ item.latestChapter }}</span>
+                    </div>
+                  </a>
+                }
               </div>
             </section>
           </div>
+
+          <aside class="content-side">
+            <section class="side-card">
+              <div class="section-head compact-head">
+                <div>
+                  <p class="eyebrow">Топ за неделю</p>
+                  <h2>Рейтинг тайтлов</h2>
+                </div>
+              </div>
+
+              <div class="ranking-list">
+                @for (item of topTitles(); track item.id; let index = $index) {
+                  <a class="ranking-link" [routerLink]="['/app/title', item.id]">
+                    <span>{{ index + 1 }}</span>
+                    <div>
+                      <strong>{{ item.title }}</strong>
+                      <small>{{ compactViews(item) }} просмотров</small>
+                    </div>
+                    <em>{{ ratingFor(item) }}</em>
+                  </a>
+                }
+              </div>
+            </section>
+
+            <section class="side-card">
+              <div class="section-head compact-head">
+                <div>
+                  <p class="eyebrow">Коллекции</p>
+                  <h2>Что почитать дальше</h2>
+                </div>
+              </div>
+
+              <div class="genre-cloud">
+                @for (genre of collectionGenres(); track genre) {
+                  <a [routerLink]="['/app/catalog']" [queryParams]="{ genre }">{{ genre }}</a>
+                }
+              </div>
+
+              <div class="mini-stack">
+                @for (item of recommendations(); track item.id) {
+                  <a class="mini-link" [routerLink]="['/app/title', item.id]">
+                    <strong>{{ item.title }}</strong>
+                    <small>{{ firstGenre(item) }} · {{ item.year }}</small>
+                  </a>
+                }
+              </div>
+            </section>
+          </aside>
         </section>
       } @else {
         <section class="empty-state">
-          <p class="eyebrow">Dashboard Waiting</p>
-          <h2>No live manga loaded yet</h2>
+          <p class="eyebrow">Каталог пуст</p>
+          <h2>Обложки и подборки появятся после загрузки API</h2>
           <p>
-            This dashboard will populate from MangaHook as soon as the API proxy can reach a
-            running backend.
+            Как только MangaHook ответит через прокси, эта страница превратится в полноценную
+            витрину с постерами, рейтингами и полками.
           </p>
         </section>
       }
@@ -100,21 +189,28 @@ import { PanelCardComponent } from '../../shared/panel-card.component';
     `
       .dashboard-page {
         display: grid;
-        gap: 1.25rem;
+        gap: 1.35rem;
       }
 
-      .recent-banner {
-        display: flex;
-        align-items: end;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1.5rem;
-        border-radius: 2rem;
+      .hero-section,
+      .content-section,
+      .updates-section,
+      .side-card,
+      .empty-state {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(18, 20, 25, 0.9);
+        box-shadow: 0 24px 56px rgba(0, 0, 0, 0.28);
+      }
+
+      .hero-section {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(280px, 420px);
+        gap: 1.25rem;
+        padding: 1.4rem;
+        border-radius: 30px;
         background:
-          linear-gradient(120deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0)),
-          linear-gradient(135deg, #ff9833, #f06e1e);
-        color: #fff9f4;
-        box-shadow: 0 1.6rem 3rem rgba(176, 84, 18, 0.18);
+          radial-gradient(circle at left top, rgba(79, 140, 255, 0.2), transparent 36%),
+          linear-gradient(180deg, rgba(19, 21, 27, 0.98), rgba(13, 14, 18, 0.96));
       }
 
       .eyebrow {
@@ -123,196 +219,363 @@ import { PanelCardComponent } from '../../shared/panel-card.component';
         font-weight: 700;
         letter-spacing: 0.12em;
         text-transform: uppercase;
+        color: rgba(246, 247, 251, 0.56);
       }
 
-      h1,
-      h2,
-      p {
+      .hero-copy {
+        display: grid;
+        align-content: center;
+        gap: 1rem;
+      }
+
+      .hero-copy h1,
+      .content-section h2,
+      .updates-section h2,
+      .side-card h2,
+      .empty-state h2 {
         margin: 0;
       }
 
-      .recent-banner h1 {
-        font-size: clamp(1.6rem, 3vw, 2.4rem);
+      .hero-copy h1 {
+        font-size: clamp(2.4rem, 5vw, 4.6rem);
+        line-height: 0.92;
       }
 
-      .recent-banner h2 {
-        margin-top: 0.55rem;
-        font-size: clamp(2rem, 5vw, 3.25rem);
+      .hero-summary,
+      .empty-state p {
+        margin: 0;
+        max-width: 44rem;
+        color: rgba(246, 247, 251, 0.72);
+        line-height: 1.7;
       }
 
-      .banner-copy {
-        margin-top: 0.85rem;
-        max-width: 42rem;
-        color: rgba(255, 249, 244, 0.88);
-        line-height: 1.6;
-      }
-
-      .banner-meta {
+      .hero-tags,
+      .hero-actions {
         display: flex;
         flex-wrap: wrap;
-        justify-content: flex-end;
         gap: 0.75rem;
       }
 
-      .banner-meta span {
-        padding: 0.7rem 0.95rem;
+      .hero-tags span,
+      .genre-cloud a {
+        padding: 0.7rem 0.9rem;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.05);
         font-weight: 700;
       }
 
-      .dashboard-grid {
+      .primary-link,
+      .secondary-link,
+      .section-head a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 3rem;
+        padding: 0 1.2rem;
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .primary-link {
+        background: linear-gradient(135deg, #4f8cff, #3873f0);
+        color: #ffffff;
+        box-shadow: 0 16px 28px rgba(56, 115, 240, 0.32);
+      }
+
+      .secondary-link,
+      .section-head a {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        color: #ffffff;
+      }
+
+      .hero-visual {
+        position: relative;
+        overflow: hidden;
+        border-radius: 24px;
+        min-height: 30rem;
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .hero-visual img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .hero-visual::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(180deg, rgba(13, 14, 18, 0.12), rgba(13, 14, 18, 0.8)),
+          linear-gradient(0deg, rgba(13, 14, 18, 0.55), transparent 40%);
+      }
+
+      .hero-overlay {
+        position: absolute;
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        z-index: 1;
         display: grid;
-        grid-template-columns: 1.65fr 1fr;
-        gap: 1.25rem;
+        gap: 0.25rem;
+        padding: 1rem;
+        border-radius: 18px;
+        background: rgba(11, 12, 15, 0.68);
+        backdrop-filter: blur(12px);
       }
 
-      .popular-column {
-        min-height: 25rem;
+      .hero-overlay span,
+      .hero-overlay small {
+        color: rgba(246, 247, 251, 0.66);
       }
 
-      .feature-card {
+      .hero-overlay strong {
+        font-size: 1.15rem;
+      }
+
+      .poster-track,
+      .poster-row {
         display: grid;
-        align-content: space-between;
-        gap: 1.2rem;
-        min-height: 100%;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(150px, 190px);
+        gap: 1rem;
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
       }
 
-      .series-title {
-        font-size: clamp(1.8rem, 4vw, 2.8rem);
+      .poster-track {
+        padding-bottom: 0.35rem;
+      }
+
+      .poster-track::-webkit-scrollbar,
+      .poster-row::-webkit-scrollbar {
+        display: none;
+      }
+
+      .poster-card {
+        min-width: 0;
+      }
+
+      .card-link,
+      .mini-link,
+      .ranking-link,
+      .genre-cloud a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .poster-card h3,
+      .update-copy h3 {
+        margin: 0.35rem 0 0;
+        font-family: 'Manrope', sans-serif;
+        font-size: 1.1rem;
+        line-height: 1.25;
+      }
+
+      .poster-card.compact h3 {
+        font-size: 1rem;
+      }
+
+      .poster-frame {
+        position: relative;
+        overflow: hidden;
+        aspect-ratio: 0.72;
+        border-radius: 22px;
+        margin-bottom: 0.8rem;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .poster-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 220ms ease;
+      }
+
+      .poster-card:hover .poster-frame img {
+        transform: scale(1.03);
+      }
+
+      .poster-frame::after {
+        content: '';
+        position: absolute;
+        inset: auto 0 0;
+        height: 40%;
+        background: linear-gradient(180deg, transparent, rgba(9, 10, 12, 0.78));
+      }
+
+      .rating-badge {
+        position: absolute;
+        right: 0.75rem;
+        bottom: 0.75rem;
+        z-index: 1;
+        padding: 0.45rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(10px);
+        font-size: 0.92rem;
         font-weight: 800;
       }
 
-      .series-meta,
-      .metrics {
-        color: rgba(255, 255, 255, 0.82);
+      .poster-meta,
+      .update-copy p,
+      .update-copy span,
+      .ranking-link small,
+      .mini-link small {
+        margin: 0;
+        color: rgba(246, 247, 251, 0.58);
       }
 
-      .metrics {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.7rem;
+      .content-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 1.25rem;
+        align-items: start;
       }
 
-      .metrics span {
-        padding: 0.7rem 0.9rem;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.14);
-      }
-
-      .right-column {
+      .content-main,
+      .content-side {
         display: grid;
         gap: 1.25rem;
+        min-width: 0;
       }
 
-      .recommendations {
-        display: grid;
-        gap: 0.75rem;
+      .content-side {
+        position: relative;
+        z-index: 2;
       }
 
-      .recommendation-item {
+      .content-section,
+      .updates-section,
+      .side-card,
+      .empty-state {
+        padding: 1.25rem;
+        border-radius: 26px;
+        overflow: hidden;
+      }
+
+      .side-card {
+        position: relative;
+        z-index: 2;
+        background: rgb(18 20 25 / 0.98);
+      }
+
+      .section-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 1rem;
-        padding: 0.85rem 1rem;
-        border-radius: 1rem;
-        background: rgba(255, 255, 255, 0.12);
+        margin-bottom: 1rem;
       }
 
-      .recommendation-item span {
-        color: rgba(246, 247, 255, 0.8);
+      .section-head h2 {
+        font-size: clamp(1.4rem, 2vw, 1.9rem);
       }
 
-      .empty-copy {
-        color: rgba(246, 247, 255, 0.84);
+      .compact-head {
+        margin-bottom: 1.2rem;
       }
 
-      .top-hundred {
-        position: relative;
+      .updates-grid,
+      .mini-stack,
+      .ranking-list {
         display: grid;
+        gap: 0.9rem;
+      }
+
+      .update-card,
+      .mini-link,
+      .ranking-link {
+        display: flex;
         align-items: center;
-        justify-items: center;
-        min-height: 14rem;
-        padding: 1.2rem;
-        border-radius: 1.8rem;
-        background: linear-gradient(180deg, #5b2f8e, #3559b8);
-        overflow: hidden;
-        color: #fff8fe;
-        box-shadow: 0 1.3rem 2.5rem rgba(54, 47, 141, 0.18);
+        gap: 0.85rem;
+        padding: 0.8rem;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.05);
       }
 
-      .triangle {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        width: 0;
-        height: 0;
-        border-left: 4rem solid transparent;
-        border-bottom: 4rem solid rgba(255, 188, 86, 0.9);
-        filter: drop-shadow(0 0.75rem 1rem rgba(48, 23, 86, 0.2));
+      .update-card img {
+        width: 4.5rem;
+        height: 6rem;
+        object-fit: cover;
+        border-radius: 14px;
       }
 
-      .top-content {
-        position: relative;
-        z-index: 1;
+      .update-copy {
         display: grid;
-        gap: 0.6rem;
-        text-align: center;
-        max-width: 18rem;
+        gap: 0.25rem;
       }
 
-      .top-content p:last-of-type {
-        color: rgba(255, 248, 254, 0.84);
-        line-height: 1.55;
+      .ranking-link {
+        display: grid;
+        grid-template-columns: 2.2rem minmax(0, 1fr) auto;
       }
 
-      .inline-link,
-      .cta-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: fit-content;
+      .ranking-link span {
+        display: grid;
+        place-items: center;
+        width: 2.2rem;
+        height: 2.2rem;
         border-radius: 999px;
-        padding: 0.85rem 1rem;
-        background: rgba(255, 255, 255, 0.16);
-        color: #fff;
-        font-weight: 700;
-        text-decoration: none;
+        background: rgba(79, 140, 255, 0.18);
+        color: #ffffff;
+        font-weight: 800;
       }
 
-      .cta-link {
-        margin-inline: auto;
+      .ranking-link strong,
+      .mini-link strong {
+        display: block;
+      }
+
+      .ranking-link em {
+        font-style: normal;
+        color: #ffffff;
+        font-weight: 800;
+      }
+
+      .genre-cloud {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+        gap: 0.65rem;
+        margin-bottom: 1rem;
       }
 
       .empty-state {
-        padding: 1.5rem;
-        border-radius: 2rem;
-        background: rgba(255, 247, 241, 0.74);
+        min-height: 16rem;
+        align-content: center;
       }
 
-      .empty-state h2 {
-        margin: 0.3rem 0 0.6rem;
-        color: #3f1f68;
-      }
-
-      .empty-state p:last-child {
-        color: rgba(63, 31, 104, 0.78);
-        line-height: 1.6;
-      }
-
-      @media (max-width: 960px) {
-        .recent-banner,
-        .dashboard-grid {
+      @media (max-width: 1100px) {
+        .hero-section,
+        .content-layout {
           grid-template-columns: 1fr;
         }
 
-        .recent-banner {
-          align-items: start;
+        .hero-visual {
+          min-height: 24rem;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .hero-copy h1 {
+          font-size: 2.45rem;
         }
 
-        .banner-meta {
-          justify-content: flex-start;
+        .section-head {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .poster-track,
+        .poster-row {
+          grid-auto-columns: minmax(138px, 156px);
         }
       }
     `
@@ -321,8 +584,55 @@ import { PanelCardComponent } from '../../shared/panel-card.component';
 })
 export class DashboardPageComponent {
   private readonly store = inject(MangaStoreService);
+  private readonly compactFormatter = new Intl.NumberFormat('ru-RU', {
+    notation: 'compact',
+    maximumFractionDigits: 1
+  });
 
-  readonly lastManga = this.store.lastManga;
-  readonly popularNow = this.store.popularNow;
+  readonly featuredManga = computed(() => this.store.popularNow() ?? this.store.lastManga());
+  readonly spotlightShelf = computed(() => this.store.mangaLibrary().slice(0, 9));
+  readonly hotReleases = computed(() =>
+    [...this.store.mangaLibrary()]
+      .sort((left, right) => right.year - left.year || right.popularity - left.popularity)
+      .slice(0, 8)
+  );
+  readonly popularShelf = computed(() =>
+    [...this.store.mangaLibrary()].sort((left, right) => right.popularity - left.popularity).slice(0, 8)
+  );
+  readonly updateFeed = computed(() =>
+    [...this.store.mangaLibrary()]
+      .sort((left, right) => right.chapters - left.chapters || right.popularity - left.popularity)
+      .slice(0, 5)
+  );
+  readonly topTitles = computed(() =>
+    [...this.store.mangaLibrary()].sort((left, right) => right.popularity - left.popularity).slice(0, 5)
+  );
   readonly recommendations = computed(() => this.store.recommendations());
+  readonly collectionGenres = computed(() => {
+    const frequency = new Map<string, number>();
+
+    for (const item of this.store.mangaLibrary()) {
+      for (const genre of item.genre) {
+        frequency.set(genre, (frequency.get(genre) ?? 0) + 1);
+      }
+    }
+
+    return [...frequency.entries()]
+      .sort((left, right) => right[1] - left[1])
+      .map(([genre]) => genre)
+      .slice(0, 8);
+  });
+
+  firstGenre(item: MangaEntry): string {
+    return item.genre[0] ?? 'Тайтл';
+  }
+
+  ratingFor(item: MangaEntry): string {
+    const score = Math.min(9.9, 6.2 + Math.log10(Math.max(item.popularity, 1)) * 0.62);
+    return score.toFixed(1);
+  }
+
+  compactViews(item: MangaEntry): string {
+    return this.compactFormatter.format(item.popularity || 0);
+  }
 }

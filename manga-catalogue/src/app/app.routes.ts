@@ -4,6 +4,7 @@ import { authGuard, loginRedirectGuard } from './core/auth.guard';
 import { LoginPageComponent } from './features/auth/login-page.component';
 import { CatalogPageComponent } from './features/catalog/catalog-page.component';
 import { DashboardPageComponent } from './features/dashboard/dashboard-page.component';
+import { MangaDetailPageComponent } from './features/manga-detail/manga-detail-page.component';
 import { ProfilePageComponent } from './features/profile/profile-page.component';
 import { ShellComponent } from './features/shell/shell.component';
 
@@ -11,7 +12,7 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'login'
+    redirectTo: 'app'
   },
   {
     path: 'login',
@@ -21,7 +22,6 @@ export const routes: Routes = [
   {
     path: 'app',
     component: ShellComponent,
-    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -29,16 +29,21 @@ export const routes: Routes = [
       },
       {
         path: 'profile',
-        component: ProfilePageComponent
+        component: ProfilePageComponent,
+        canActivate: [authGuard]
       },
       {
         path: 'catalog',
         component: CatalogPageComponent
+      },
+      {
+        path: 'title/:id',
+        component: MangaDetailPageComponent
       }
     ]
   },
   {
     path: '**',
-    redirectTo: 'login'
+    redirectTo: 'app'
   }
 ];

@@ -52,6 +52,8 @@ export interface MangaDetailResponse {
   imageUrl: string;
   name: string;
   author: string;
+  description?: string;
+  year?: number | null;
   status: string;
   updated: string;
   view: string;
