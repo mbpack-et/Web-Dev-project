@@ -6,9 +6,7 @@ Created by: Talaptan Alikhan, Mamedov Niyaz, Tynyshtyk Alis
 
 MangaBase is a web application designed for manga fans to explore, manage, and interact with a curated database of manga titles. The platform allows users to browse manga, view detailed information, leave ratings and comments, and manage their personal reading lists.
 
-This repository now includes an Angular frontend and a Django + Django REST Framework backend located in `manga-catalogue/backend`.
-
-The backend supports JWT authentication, manga CRUD, reviews, and user reading lists. See `manga-catalogue/backend/README.md` for setup instructions.
+This project is built as a full-stack application using Angular (frontend) and Django + Django REST Framework (backend), with secure user authentication powered by JWT.
 
 <div align="center">
 <kbd>

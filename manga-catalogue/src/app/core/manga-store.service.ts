@@ -103,6 +103,27 @@ export class MangaStoreService {
     return true;
   }
 
+  register(username: string, email: string, password: string): Promise<boolean> {
+    if (!username.trim() || !email.trim() || !password.trim()) {
+      return Promise.resolve(false);
+    }
+
+    const body = { username: username.trim(), email: email.trim(), password };
+
+    return this.http
+      .post<{ id: number; username: string; email: string }>('/api/auth/register/', body)
+      .toPromise()
+      .then((response) => {
+        if (response) {
+          this.userName.set(response.username);
+          this.isAuthenticated.set(true);
+          return true;
+        }
+        return false;
+      })
+      .catch(() => false);
+  }
+
   logout(): void {
     this.isAuthenticated.set(false);
     this.favoriteIds.set([]);

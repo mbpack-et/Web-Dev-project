@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 
 import { MangaStoreService } from '../../core/manga-store.service';
@@ -29,7 +29,7 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
         <div class="header-tools">
           <label class="search-field" aria-label="Поиск">
             <span class="search-icon" aria-hidden="true"></span>
-            <input type="search" placeholder="Что ищем, семпай?" />
+            <input type="search" placeholder="Что ищем, семпай?" [value]="searchQuery()" (input)="onSearch($event)" />
           </label>
 
           <a class="icon-link" routerLink="/app/catalog" aria-label="Открыть каталог"></a>
@@ -301,10 +301,22 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
 })
 export class ShellComponent implements OnInit {
   readonly store = inject(MangaStoreService);
+  readonly searchQuery = signal('');
   private readonly router = inject(Router);
 
   ngOnInit(): void {
     this.store.ensureCatalogLoaded();
+  }
+
+  onSearch(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    const query = target.value;
+    this.searchQuery.set(query);
+
+    void this.router.navigate(['/app/catalog'], {
+      queryParams: { query },
+      queryParamsHandling: 'merge'
+    });
   }
 
   logout(): void {

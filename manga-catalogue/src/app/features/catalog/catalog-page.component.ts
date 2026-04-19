@@ -36,6 +36,9 @@ type SortMode = 'Popularity' | 'Alphabetical';
       </header>
 
       <section class="toolbar-shell">
+        <div class="search-bar">
+          <input type="text" placeholder="Search by manga name..." [value]="searchQuery()" (input)="updateSearch($event)" />
+        </div>
         <div class="filter-stack">
           <app-segmented-control
             label="Жанр"
@@ -205,6 +208,20 @@ type SortMode = 'Popularity' | 'Alphabetical';
         border-radius: 26px;
       }
 
+      .search-bar input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.04);
+        color: #ffffff;
+        font-size: 1rem;
+      }
+
+      .search-bar input::placeholder {
+        color: rgba(246, 247, 251, 0.56);
+      }
+
       .filter-stack {
         display: grid;
         gap: 1rem;
@@ -346,6 +363,7 @@ export class CatalogPageComponent implements OnInit {
   readonly selectedGenre = signal('All Genres');
   readonly selectedYear = signal('All Years');
   readonly selectedSort = signal<SortMode>('Popularity');
+  readonly searchQuery = signal('');
   readonly sortOptions: readonly SortMode[] = ['Popularity', 'Alphabetical'];
 
   readonly genreOptions = computed(() => this.store.genreOptions());
@@ -372,6 +390,11 @@ export class CatalogPageComponent implements OnInit {
       result = result.filter((item) => item.year === Number(this.selectedYear()));
     }
 
+    if (this.searchQuery()) {
+      const query = this.searchQuery().toLowerCase();
+      result = result.filter((item) => item.title.toLowerCase().includes(query));
+    }
+
     return result.sort((left, right) =>
       this.selectedSort() === 'Popularity'
         ? right.popularity - left.popularity
@@ -384,14 +407,25 @@ export class CatalogPageComponent implements OnInit {
   ngOnInit(): void {
     this.route.queryParamMap.subscribe((params) => {
       const genre = params.get('genre') ?? 'All Genres';
-      this.selectedGenre.set(genre);
-      this.store.loadCatalog(genre, 1);
+      const query = params.get('query') ?? '';
+
+      if (genre !== this.selectedGenre()) {
+        this.selectedGenre.set(genre);
+        this.store.loadCatalog(genre, 1);
+      }
+
+      this.searchQuery.set(query);
     });
   }
 
   updateGenre(genre: string): void {
     this.selectedGenre.set(genre);
     this.store.loadCatalog(genre, 1);
+  }
+
+  updateSearch(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.searchQuery.set(target.value);
   }
 
   updateSort(sortMode: string): void {

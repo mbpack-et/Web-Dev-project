@@ -39,28 +39,84 @@ import { MangaStoreService } from '../../core/manga-store.service';
           <div class="credentials-head">
             <p class="eyebrow">Вход/Регистрация</p>
             <h2>Открыть каталог</h2>
+            <div class="mode-toggle">
+              <button
+                type="button"
+                class="toggle-btn"
+                [class.active]="!isRegistering()"
+                (click)="setMode(false)"
+              >
+                Вход
+              </button>
+              <button
+                type="button"
+                class="toggle-btn"
+                [class.active]="isRegistering()"
+                (click)="setMode(true)"
+              >
+                Регистрация
+              </button>
+            </div>
           </div>
 
-          <label>
-            <span>Имя</span>
-            <input [(ngModel)]="userName" name="userName" placeholder="Mina Sato" />
-          </label>
+          @if (!isRegistering()) {
+            <label>
+              <span>Имя</span>
+              <input [(ngModel)]="userName" name="userName" placeholder="Mina Sato" />
+            </label>
 
-          <label>
-            <span>Пароль</span>
-            <input
-              [(ngModel)]="password"
-              name="password"
-              type="password"
-              placeholder="Введите любой пароль"
-            />
-          </label>
+            <label>
+              <span>Пароль</span>
+              <input
+                [(ngModel)]="password"
+                name="password"
+                type="password"
+                placeholder="Введите любой пароль"
+              />
+            </label>
+          } @else {
+            <label>
+              <span>Имя пользователя</span>
+              <input
+                [(ngModel)]="regUsername"
+                name="regUsername"
+                placeholder="username"
+              />
+            </label>
+
+            <label>
+              <span>Email</span>
+              <input [(ngModel)]="regEmail" name="regEmail" type="email" placeholder="user@example.com" />
+            </label>
+
+            <label>
+              <span>Пароль</span>
+              <input
+                [(ngModel)]="regPassword"
+                name="regPassword"
+                type="password"
+                placeholder="Введите пароль"
+              />
+            </label>
+
+            <label>
+              <span>Подтвердите пароль</span>
+              <input
+                [(ngModel)]="regPasswordConfirm"
+                name="regPasswordConfirm"
+                type="password"
+                placeholder="Подтвердите пароль"
+              />
+            </label>
+          }
 
           @if (errorMessage()) {
             <p class="error">{{ errorMessage() }}</p>
           }
 
-          <button type="button" (click)="submit()">Перейти к витрине</button>
+          <button type="button" (click)="submit()" [disabled]="isLoading()">
+            {{ isRegistering() ? 'Создать аккаунт' : 'Перейти к витрине' }}
+          </button>
         </div>
       </section>
     </main>
@@ -192,6 +248,35 @@ import { MangaStoreService } from '../../core/manga-store.service';
         gap: 0.3rem;
       }
 
+      .mode-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        margin-top: 0.8rem;
+      }
+
+      .toggle-btn {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 0.6rem;
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(246, 247, 251, 0.6);
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 200ms ease;
+      }
+
+      .toggle-btn.active {
+        background: linear-gradient(135deg, #4f8cff, #3873f0);
+        color: #fff;
+        border-color: rgba(79, 140, 255, 0.5);
+      }
+
+      .toggle-btn:hover {
+        border-color: rgba(79, 140, 255, 0.3);
+      }
+
       label {
         display: grid;
         gap: 0.55rem;
@@ -224,10 +309,15 @@ import { MangaStoreService } from '../../core/manga-store.service';
           box-shadow 180ms ease;
       }
 
-      button:hover,
-      button:focus-visible {
+      button:hover:not(:disabled),
+      button:focus-visible:not(:disabled) {
         transform: translateY(-1px);
         box-shadow: 0 1rem 2rem rgba(56, 115, 240, 0.28);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
       }
 
       .error {
@@ -252,11 +342,33 @@ export class LoginPageComponent {
   private readonly store = inject(MangaStoreService);
   private readonly router = inject(Router);
 
+  readonly isRegistering = signal(false);
+  readonly isLoading = signal(false);
+
   userName = 'Mina Sato';
   password = '';
+
+  regUsername = '';
+  regEmail = '';
+  regPassword = '';
+  regPasswordConfirm = '';
+
   readonly errorMessage = signal('');
 
-  submit(): void {
+  setMode(isRegistering: boolean): void {
+    this.isRegistering.set(isRegistering);
+    this.errorMessage.set('');
+  }
+
+  async submit(): Promise<void> {
+    if (this.isRegistering()) {
+      await this.handleRegister();
+    } else {
+      this.handleLogin();
+    }
+  }
+
+  private handleLogin(): void {
     const loggedIn = this.store.login(this.userName, this.password);
 
     if (!loggedIn) {
@@ -267,5 +379,60 @@ export class LoginPageComponent {
     this.errorMessage.set('');
     this.store.ensureCatalogLoaded();
     void this.router.navigateByUrl('/app');
+  }
+
+  private async handleRegister(): Promise<void> {
+    // Validation
+    if (!this.regUsername.trim()) {
+      this.errorMessage.set('Введи имя пользователя.');
+      return;
+    }
+
+    if (!this.regEmail.trim() || !this.isValidEmail(this.regEmail)) {
+      this.errorMessage.set('Введи корректный email.');
+      return;
+    }
+
+    if (!this.regPassword.trim()) {
+      this.errorMessage.set('Введи пароль.');
+      return;
+    }
+
+    if (this.regPassword !== this.regPasswordConfirm) {
+      this.errorMessage.set('Пароли не совпадают.');
+      return;
+    }
+
+    if (this.regPassword.length < 6) {
+      this.errorMessage.set('Пароль должен быть минимум 6 символов.');
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+
+    try {
+      const success = await this.store.register(
+        this.regUsername,
+        this.regEmail,
+        this.regPassword
+      );
+
+      if (success) {
+        this.store.ensureCatalogLoaded();
+        void this.router.navigateByUrl('/app');
+      } else {
+        this.errorMessage.set('Ошибка при создании аккаунта. Попробуй ещё раз.');
+      }
+    } catch (error) {
+      this.errorMessage.set('Ошибка при создании аккаунта. Попробуй ещё раз.');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   }
 }

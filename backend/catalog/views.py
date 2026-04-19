@@ -6,7 +6,24 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Manga, ReadingList, Review
-from .serializers import MangaSerializer, ReadingListSerializer, ReviewSerializer
+from .serializers import MangaSerializer, ReadingListSerializer, ReviewSerializer, UserSerializer
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def register_user(request):
+    serializer = UserSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'user': serializer.data,
+            'tokens': {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }
+        }, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'POST'])
@@ -82,6 +99,17 @@ class ReadingListView(APIView):
         entry = get_object_or_404(ReadingList, user=request.user, manga_id=manga_id)
         entry.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def search_manga(request):
+    query = request.GET.get('q', '')
+    if not query:
+        return Response({'error': 'Query parameter q is required'}, status=status.HTTP_400_BAD_REQUEST)
+    manga = Manga.objects.filter(title__icontains=query)
+    serializer = MangaSerializer(manga, many=True)
+    return Response(serializer.data)
 
 
 class LogoutView(APIView):
