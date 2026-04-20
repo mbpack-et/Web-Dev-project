@@ -39,6 +39,12 @@ testem.log
 /typings
 __screenshots__/
 
+# Keep frontend-only: nested Django backend artifacts do not belong here.
+/backend/
+**/__pycache__/
+*.py[cod]
+*.sqlite3
+
 # System files
 .DS_Store
 Thumbs.db
