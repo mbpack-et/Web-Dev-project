@@ -32,7 +32,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 
       .control-label {
         margin: 0;
-        color: rgba(246, 247, 251, 0.7);
+        color: var(--text-soft);
         font-size: 0.85rem;
         font-weight: 700;
         text-transform: uppercase;
@@ -51,11 +51,11 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       }
 
       .segment {
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--panel-border);
         border-radius: 999px;
         padding: 0.72rem 1rem;
-        background: rgba(255, 255, 255, 0.04);
-        color: rgba(246, 247, 251, 0.78);
+        background: var(--chip-bg);
+        color: var(--text-soft);
         font: inherit;
         font-weight: 700;
         cursor: pointer;
@@ -70,14 +70,14 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       .segment:hover,
       .segment:focus-visible {
         transform: translateY(-1px);
-        border-color: rgba(255, 255, 255, 0.14);
-        background: rgba(255, 255, 255, 0.08);
-        box-shadow: 0 12px 20px rgba(0, 0, 0, 0.18);
+        border-color: var(--panel-border-strong);
+        background: var(--chip-hover);
+        box-shadow: var(--shadow);
       }
 
       .segment.is-active {
-        border-color: rgba(79, 140, 255, 0.34);
-        background: rgba(79, 140, 255, 0.18);
+        border-color: var(--accent-soft);
+        background: var(--chip-active);
         color: #ffffff;
       }
     `

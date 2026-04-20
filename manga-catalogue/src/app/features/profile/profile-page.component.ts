@@ -162,9 +162,9 @@ import { SegmentedControlComponent } from '../../shared/segmented-control.compon
       .profile-hero,
       .watchlist-panel,
       .side-panel {
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(18, 20, 25, 0.9);
-        box-shadow: 0 24px 56px rgba(0, 0, 0, 0.28);
+        border: 1px solid var(--panel-border);
+        background: var(--surface);
+        box-shadow: var(--poster-shadow);
       }
 
       .profile-hero {
@@ -182,7 +182,7 @@ import { SegmentedControlComponent } from '../../shared/segmented-control.compon
         font-weight: 700;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: rgba(246, 247, 251, 0.56);
+        color: var(--text-muted);
       }
 
       .identity-block {
@@ -197,11 +197,11 @@ import { SegmentedControlComponent } from '../../shared/segmented-control.compon
         width: 5rem;
         height: 5rem;
         border-radius: 999px;
-        background: linear-gradient(135deg, #4f8cff, #79a6ff);
+        background: linear-gradient(135deg, var(--accent), #79a6ff);
         color: #ffffff;
         font-size: 1.4rem;
         font-weight: 800;
-        box-shadow: 0 16px 28px rgba(56, 115, 240, 0.28);
+        box-shadow: var(--accent-shadow);
       }
 
       .identity-copy {
@@ -229,7 +229,7 @@ import { SegmentedControlComponent } from '../../shared/segmented-control.compon
       .empty-list p {
         margin: 0;
         line-height: 1.6;
-        color: rgba(246, 247, 251, 0.64);
+        color: var(--text-soft);
       }
 
       .stat-grid {
@@ -241,7 +241,7 @@ import { SegmentedControlComponent } from '../../shared/segmented-control.compon
       .stat-grid article {
         padding: 1rem;
         border-radius: 18px;
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--chip-bg);
         text-align: center;
       }
 
@@ -251,7 +251,7 @@ import { SegmentedControlComponent } from '../../shared/segmented-control.compon
       }
 
       .stat-grid span {
-        color: rgba(246, 247, 251, 0.58);
+        color: var(--text-muted);
       }
 
       .profile-layout {
@@ -287,7 +287,7 @@ import { SegmentedControlComponent } from '../../shared/segmented-control.compon
         aspect-ratio: 0.72;
         margin-bottom: 0.75rem;
         border-radius: 22px;
-        background: rgba(255, 255, 255, 0.04);
+        background: var(--field-bg);
       }
 
       .poster-frame img {
@@ -301,7 +301,7 @@ import { SegmentedControlComponent } from '../../shared/segmented-control.compon
         position: absolute;
         inset: auto 0 0;
         height: 40%;
-        background: linear-gradient(180deg, transparent, rgba(9, 10, 12, 0.78));
+        background: var(--card-overlay);
       }
 
       .rating-badge {
@@ -311,7 +311,7 @@ import { SegmentedControlComponent } from '../../shared/segmented-control.compon
         z-index: 1;
         padding: 0.45rem 0.7rem;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.18);
+        background: var(--hero-overlay);
         backdrop-filter: blur(10px);
         font-size: 0.92rem;
         font-weight: 800;
@@ -347,7 +347,7 @@ import { SegmentedControlComponent } from '../../shared/segmented-control.compon
         gap: 0.85rem;
         padding: 0.85rem;
         border-radius: 18px;
-        background: rgba(255, 255, 255, 0.04);
+        background: var(--chip-bg);
       }
 
       .favorite-card img,
@@ -374,7 +374,7 @@ import { SegmentedControlComponent } from '../../shared/segmented-control.compon
         display: grid;
         place-items: center;
         border-radius: 999px;
-        background: rgba(79, 140, 255, 0.18);
+        background: var(--accent-soft);
         font-weight: 800;
       }
 
@@ -384,7 +384,7 @@ import { SegmentedControlComponent } from '../../shared/segmented-control.compon
 
       .friend-card span {
         max-width: 9rem;
-        color: rgba(246, 247, 251, 0.58);
+        color: var(--text-muted);
         font-size: 0.88rem;
       }
 

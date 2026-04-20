@@ -25,8 +25,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         padding: 0.75rem 1.15rem;
         border-radius: 999px;
         border: 1px solid transparent;
-        background: rgba(255, 255, 255, 0.04);
-        color: rgba(246, 247, 251, 0.82);
+        background: var(--chip-bg);
+        color: var(--text-soft);
         text-decoration: none;
         font-weight: 700;
         letter-spacing: 0.02em;
@@ -40,16 +40,16 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 
       .nav-link:hover,
       .nav-link:focus-visible {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 255, 255, 0.08);
-        color: #ffffff;
+        background: var(--chip-hover);
+        border-color: var(--panel-border);
+        color: var(--text-main);
         transform: translateY(-1px);
       }
 
       .nav-link.is-active {
-        background: linear-gradient(135deg, #4f8cff, #3873f0);
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
         color: #fff;
-        box-shadow: 0 14px 28px rgba(53, 105, 220, 0.34);
+        box-shadow: var(--accent-shadow);
       }
     `
   ],

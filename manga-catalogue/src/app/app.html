@@ -1,1 +1,8 @@
-<router-outlet />
+<div class="app-shell">
+  <button type="button" class="theme-toggle" (click)="toggleTheme()">
+    <span class="theme-toggle__icon" aria-hidden="true">{{ theme() === 'dark' ? '☀' : '☾' }}</span>
+    <span>{{ theme() === 'dark' ? 'Светлая тема' : 'Тёмная тема' }}</span>
+  </button>
+
+  <router-outlet />
+</div>

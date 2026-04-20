@@ -147,9 +147,9 @@ import { MangaStoreService } from '../../core/manga-store.service';
       .detail-hero,
       .info-panel,
       .utility-card {
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(18, 20, 25, 0.92);
-        box-shadow: 0 24px 56px rgba(0, 0, 0, 0.28);
+        border: 1px solid var(--panel-border);
+        background: var(--surface);
+        box-shadow: var(--poster-shadow);
       }
 
       .detail-hero {
@@ -171,7 +171,7 @@ import { MangaStoreService } from '../../core/manga-store.service';
         overflow: hidden;
         border-radius: 24px;
         aspect-ratio: 0.72;
-        background: rgba(255, 255, 255, 0.04);
+        background: var(--field-bg);
       }
 
       .poster-shell img {
@@ -192,7 +192,7 @@ import { MangaStoreService } from '../../core/manga-store.service';
         font-weight: 700;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: rgba(246, 247, 251, 0.56);
+        color: var(--text-muted);
       }
 
       .headline-block,
@@ -220,7 +220,7 @@ import { MangaStoreService } from '../../core/manga-store.service';
       .utility-copy,
       .utility-note,
       .chapter-card p {
-        color: rgba(246, 247, 251, 0.68);
+        color: var(--text-soft);
         line-height: 1.65;
       }
 
@@ -234,13 +234,13 @@ import { MangaStoreService } from '../../core/manga-store.service';
       .chapter-card {
         padding: 0.95rem 1rem;
         border-radius: 18px;
-        background: rgba(255, 255, 255, 0.04);
+        background: var(--chip-bg);
       }
 
       .stats-grid span {
         display: block;
         margin-bottom: 0.35rem;
-        color: rgba(246, 247, 251, 0.58);
+        color: var(--text-muted);
         font-size: 0.88rem;
       }
 
@@ -267,9 +267,9 @@ import { MangaStoreService } from '../../core/manga-store.service';
         min-height: 2.85rem;
         padding: 0 1rem;
         border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.04);
-        color: #ffffff;
+        border: 1px solid var(--panel-border);
+        background: var(--chip-bg);
+        color: var(--text-main);
         text-decoration: none;
         font-weight: 700;
       }
@@ -277,13 +277,13 @@ import { MangaStoreService } from '../../core/manga-store.service';
       .utility-button {
         width: 100%;
         border: 0;
-        background: linear-gradient(135deg, #4f8cff, #3873f0);
-        box-shadow: 0 16px 28px rgba(56, 115, 240, 0.26);
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        box-shadow: var(--accent-shadow);
       }
 
       .login-link {
-        background: linear-gradient(135deg, #4f8cff, #3873f0);
-        box-shadow: 0 16px 28px rgba(56, 115, 240, 0.26);
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        box-shadow: var(--accent-shadow);
       }
 
       .rating-tools {
@@ -293,7 +293,7 @@ import { MangaStoreService } from '../../core/manga-store.service';
 
       .rating-tools span,
       .rating-tools small {
-        color: rgba(246, 247, 251, 0.68);
+        color: var(--text-soft);
       }
 
       .rating-row {
@@ -305,15 +305,15 @@ import { MangaStoreService } from '../../core/manga-store.service';
       .rating-chip {
         min-height: 2.8rem;
         border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.04);
-        color: #ffffff;
+        border: 1px solid var(--panel-border);
+        background: var(--chip-bg);
+        color: var(--text-main);
         font-weight: 800;
       }
 
       .rating-chip.is-active {
-        background: rgba(79, 140, 255, 0.22);
-        border-color: rgba(79, 140, 255, 0.42);
+        background: var(--accent-strong-soft);
+        border-color: var(--accent-soft);
       }
 
       .chapter-stack {
@@ -334,7 +334,7 @@ import { MangaStoreService } from '../../core/manga-store.service';
       }
 
       .chapter-card span {
-        color: rgba(246, 247, 251, 0.62);
+        color: var(--text-soft);
         white-space: nowrap;
       }
 

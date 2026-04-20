@@ -1,3 +1,56 @@
 :host {
   display: block;
 }
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.theme-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 3rem;
+  padding: 0 1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: var(--surface-strong);
+  color: var(--text-main);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+  transform: translateY(-1px);
+  border-color: var(--panel-border-strong);
+  background: var(--surface-hover);
+}
+
+.theme-toggle__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 720px) {
+  .theme-toggle {
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0 0.9rem;
+  }
+}

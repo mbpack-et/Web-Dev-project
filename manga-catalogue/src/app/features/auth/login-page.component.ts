@@ -137,9 +137,9 @@ import { MangaStoreService } from '../../core/manga-store.service';
         gap: 1.5rem;
         padding: 1.35rem;
         border-radius: 32px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(16, 18, 22, 0.92);
-        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+        border: 1px solid var(--panel-border);
+        background: var(--surface);
+        box-shadow: var(--shadow);
       }
 
       .showcase-panel,
@@ -161,8 +161,8 @@ import { MangaStoreService } from '../../core/manga-store.service';
         display: grid;
         gap: 1rem;
         align-content: center;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--panel-border);
+        background: var(--chip-bg);
       }
 
       .eyebrow,
@@ -172,7 +172,7 @@ import { MangaStoreService } from '../../core/manga-store.service';
         font-weight: 700;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: rgba(246, 247, 251, 0.58);
+        color: var(--text-muted);
       }
 
       h1,
@@ -193,7 +193,7 @@ import { MangaStoreService } from '../../core/manga-store.service';
       .summary {
         font-size: 1.02rem;
         line-height: 1.7;
-        color: rgba(246, 247, 251, 0.7);
+        color: var(--text-soft);
         max-width: 28rem;
       }
 
@@ -212,11 +212,11 @@ import { MangaStoreService } from '../../core/manga-store.service';
         padding: 1rem;
         border-radius: 22px;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--panel-border);
       }
 
       .cover-tile span {
-        color: rgba(246, 247, 251, 0.6);
+        color: var(--text-soft);
         font-size: 0.9rem;
       }
 
@@ -256,11 +256,11 @@ import { MangaStoreService } from '../../core/manga-store.service';
       }
 
       .toggle-btn {
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid var(--panel-border-strong);
         border-radius: 12px;
         padding: 0.6rem;
-        background: rgba(255, 255, 255, 0.05);
-        color: rgba(246, 247, 251, 0.6);
+        background: var(--field-bg-strong);
+        color: var(--text-soft);
         font-weight: 600;
         font-size: 0.9rem;
         cursor: pointer;
@@ -268,13 +268,13 @@ import { MangaStoreService } from '../../core/manga-store.service';
       }
 
       .toggle-btn.active {
-        background: linear-gradient(135deg, #4f8cff, #3873f0);
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
         color: #fff;
-        border-color: rgba(79, 140, 255, 0.5);
+        border-color: var(--accent-soft);
       }
 
       .toggle-btn:hover {
-        border-color: rgba(79, 140, 255, 0.3);
+        border-color: var(--accent-soft);
       }
 
       label {
@@ -284,15 +284,15 @@ import { MangaStoreService } from '../../core/manga-store.service';
 
       input {
         width: 100%;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--panel-border);
         border-radius: 18px;
         padding: 0.95rem 1rem;
-        color: #ffffff;
-        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-main);
+        background: var(--field-bg-strong);
       }
 
       input:focus {
-        outline: 2px solid rgba(79, 140, 255, 0.35);
+        outline: 2px solid var(--focus-ring);
         outline-offset: 2px;
       }
 
@@ -301,7 +301,7 @@ import { MangaStoreService } from '../../core/manga-store.service';
         border-radius: 999px;
         min-height: 3rem;
         padding: 0 1.2rem;
-        background: linear-gradient(135deg, #4f8cff, #3873f0);
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
         color: #fff;
         font-weight: 700;
         transition:
@@ -312,7 +312,7 @@ import { MangaStoreService } from '../../core/manga-store.service';
       button:hover:not(:disabled),
       button:focus-visible:not(:disabled) {
         transform: translateY(-1px);
-        box-shadow: 0 1rem 2rem rgba(56, 115, 240, 0.28);
+        box-shadow: var(--accent-shadow);
       }
 
       button:disabled {
@@ -321,7 +321,7 @@ import { MangaStoreService } from '../../core/manga-store.service';
       }
 
       .error {
-        color: #ffb6bd;
+        color: var(--danger);
         font-weight: 600;
       }
 

@@ -73,10 +73,10 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
         gap: 1rem;
         padding: 0.95rem 1.15rem;
         border-radius: 24px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(17, 19, 24, 0.86);
+        border: 1px solid var(--panel-border);
+        background: var(--surface);
         backdrop-filter: blur(18px);
-        box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+        box-shadow: var(--shadow);
       }
 
       .header-primary,
@@ -96,7 +96,7 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
         align-items: center;
         gap: 0.85rem;
         min-width: fit-content;
-        color: #ffffff;
+        color: var(--text-main);
         text-decoration: none;
       }
 
@@ -115,7 +115,7 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
         height: 3.1rem;
         flex-shrink: 0;
         border-radius: 999px;
-        background: linear-gradient(145deg, #ffffff, #d9dde8);
+        background: var(--brand-mark-top);
         box-shadow:
           inset -10px -10px 18px rgba(0, 0, 0, 0.08),
           0 14px 30px rgba(0, 0, 0, 0.3);
@@ -126,7 +126,7 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
         content: '';
         position: absolute;
         border-radius: 999px;
-        background: #101114;
+        background: var(--brand-mark-cutout);
       }
 
       .brand-mark::before {
@@ -159,20 +159,20 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
         min-height: 3rem;
         padding: 0 1rem;
         border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--panel-border);
+        background: var(--field-bg);
       }
 
       .search-field input {
         width: 100%;
         border: 0;
         outline: 0;
-        color: #ffffff;
+        color: var(--text-main);
         background: transparent;
       }
 
       .search-field input::placeholder {
-        color: rgba(246, 247, 251, 0.56);
+        color: var(--text-muted);
       }
 
       .search-icon {
@@ -180,7 +180,7 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
         width: 1rem;
         height: 1rem;
         flex-shrink: 0;
-        border: 2px solid rgba(255, 255, 255, 0.72);
+        border: 2px solid var(--search-icon);
         border-radius: 999px;
       }
 
@@ -192,7 +192,7 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
         right: -0.28rem;
         bottom: -0.12rem;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.72);
+        background: var(--search-icon);
         transform: rotate(45deg);
       }
 
@@ -211,8 +211,8 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
 
       .icon-link {
         width: 3rem;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--panel-border);
+        background: var(--chip-bg);
       }
 
       .icon-link::before {
@@ -222,15 +222,15 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
         border-radius: 999px;
         box-shadow:
           -0.26rem -0.02rem 0 0 rgba(255, 255, 255, 0.95),
-          0.22rem 0 0 0 rgba(17, 19, 24, 0.9);
+          0.22rem 0 0 0 var(--surface-strong);
       }
 
       .account-link,
       .ghost-action {
         padding: 0 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.04);
-        color: #ffffff;
+        border: 1px solid var(--panel-border);
+        background: var(--chip-bg);
+        color: var(--text-main);
       }
 
       .ghost-action {
@@ -239,9 +239,9 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
 
       .primary-action {
         padding: 0 1.25rem;
-        background: linear-gradient(135deg, #4f8cff, #3873f0);
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
         color: #ffffff;
-        box-shadow: 0 16px 30px rgba(56, 115, 240, 0.35);
+        box-shadow: var(--accent-shadow);
       }
 
       .shell-content {
@@ -256,13 +256,13 @@ import { NavLinkComponent } from '../../shared/nav-link.component';
         margin: 1rem auto 0;
         padding: 0.95rem 1rem;
         border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--panel-border);
+        background: var(--chip-bg);
         font-weight: 700;
       }
 
       .status-banner {
-        color: rgba(246, 247, 251, 0.8);
+        color: var(--text-soft);
       }
 
       .error-banner {
