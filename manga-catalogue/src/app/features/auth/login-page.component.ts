@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 import { MangaStoreService } from '../../core/manga-store.service';
 
@@ -358,27 +359,41 @@ export class LoginPageComponent {
   setMode(isRegistering: boolean): void {
     this.isRegistering.set(isRegistering);
     this.errorMessage.set('');
+    this.store.authErrorMessage.set('');
   }
 
   async submit(): Promise<void> {
     if (this.isRegistering()) {
       await this.handleRegister();
     } else {
-      this.handleLogin();
+      await this.handleLogin();
     }
   }
 
-  private handleLogin(): void {
-    const loggedIn = this.store.login(this.userName, this.password);
-
-    if (!loggedIn) {
+  private async handleLogin(): Promise<void> {
+    if (!this.userName.trim() || !this.password.trim()) {
       this.errorMessage.set('Заполни имя и пароль, чтобы открыть витрину.');
       return;
     }
 
+    this.isLoading.set(true);
     this.errorMessage.set('');
-    this.store.ensureCatalogLoaded();
-    void this.router.navigateByUrl('/app');
+
+    try {
+      const loggedIn = await firstValueFrom(this.store.login(this.userName, this.password));
+
+      if (!loggedIn) {
+        this.errorMessage.set(
+          this.store.authErrorMessage() || 'Неверный логин или пароль.'
+        );
+        return;
+      }
+
+      this.store.ensureCatalogLoaded();
+      void this.router.navigateByUrl('/app');
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   private async handleRegister(): Promise<void> {
@@ -412,20 +427,22 @@ export class LoginPageComponent {
     this.errorMessage.set('');
 
     try {
-      const success = await this.store.register(
-        this.regUsername,
-        this.regEmail,
-        this.regPassword
+      const success = await firstValueFrom(
+        this.store.register(this.regUsername, this.regEmail, this.regPassword)
       );
 
       if (success) {
         this.store.ensureCatalogLoaded();
         void this.router.navigateByUrl('/app');
       } else {
-        this.errorMessage.set('Ошибка при создании аккаунта. Попробуй ещё раз.');
+        this.errorMessage.set(
+          this.store.authErrorMessage() || 'Ошибка при создании аккаунта.'
+        );
       }
     } catch (error) {
-      this.errorMessage.set('Ошибка при создании аккаунта. Попробуй ещё раз.');
+      this.errorMessage.set(
+        this.store.authErrorMessage() || 'Ошибка при создании аккаунта.'
+      );
     } finally {
       this.isLoading.set(false);
     }

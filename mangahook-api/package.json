@@ -1,0 +1,10 @@
+{
+  "name": "mangahook-api-local",
+  "private": true,
+  "description": "MangaHook Express API lives in ./server (upstream layout). Run setup once, then start.",
+  "scripts": {
+    "setup": "npm install --prefix server",
+    "start": "npm start --prefix server",
+    "dev": "npm run dev --prefix server"
+  }
+}

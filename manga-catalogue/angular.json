@@ -65,13 +65,15 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "manga-catalogue:build:production"
             },
             "development": {
-              "buildTarget": "manga-catalogue:build:development",
-              "proxyConfig": "proxy.conf.json"
+              "buildTarget": "manga-catalogue:build:development"
             }
           },
           "defaultConfiguration": "development"

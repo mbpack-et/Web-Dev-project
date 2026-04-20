@@ -1,8 +1,9 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Observable, forkJoin, of } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 
+import { AuthTokenService } from './auth-token.service';
 import {
   ApiFilterOption,
   FRIENDS_LIST,
@@ -20,7 +21,24 @@ const ACCENT_ROTATION: readonly PanelTone[] = ['plum', 'indigo', 'sky', 'gold'];
 @Injectable({ providedIn: 'root' })
 export class MangaStoreService {
   private readonly http = inject(HttpClient);
+  private readonly authTokens = inject(AuthTokenService);
   private readonly pendingDetailIds = new Set<string>();
+
+  constructor() {
+    this.authTokens.registerSessionClearHandler(() => {
+      this.isAuthenticated.set(false);
+      this.favoriteIds.set([]);
+      this.userRatings.set({});
+      this.userName.set('Mina Sato');
+      this.authErrorMessage.set('');
+    });
+
+    const storedName = this.authTokens.getStoredUsername();
+    if (this.authTokens.getAccess() && storedName) {
+      this.isAuthenticated.set(true);
+      this.userName.set(storedName);
+    }
+  }
 
   readonly isAuthenticated = signal(false);
   readonly userName = signal('Mina Sato');
@@ -34,6 +52,8 @@ export class MangaStoreService {
   readonly loadedOnce = signal(false);
   readonly favoriteIds = signal<string[]>([]);
   readonly userRatings = signal<Record<string, number>>({});
+  /** Last error from login/register HTTP call (Russian copy for UI). */
+  readonly authErrorMessage = signal('');
 
   private readonly availableCategoryOptions = signal<ApiFilterOption[]>([]);
   private readonly detailCache = signal<Record<string, MangaDetailResponse>>({});
@@ -93,41 +113,73 @@ export class MangaStoreService {
       .filter((item): item is MangaEntry => !!item);
   });
 
-  login(userName: string, password: string): boolean {
-    if (!userName.trim() || !password.trim()) {
-      return false;
+  login(userName: string, password: string): Observable<boolean> {
+    const trimmed = userName.trim();
+    if (!trimmed || !password.trim()) {
+      return of(false);
     }
 
-    this.userName.set(userName.trim());
-    this.isAuthenticated.set(true);
-    return true;
+    this.authErrorMessage.set('');
+
+    return this.http
+      .post<{ access: string; refresh: string }>('/api/auth/login/', {
+        username: trimmed,
+        password
+      })
+      .pipe(
+        tap((tokens) => {
+          this.authTokens.setTokens(tokens.access, tokens.refresh);
+          this.authTokens.setStoredUsername(trimmed);
+          this.userName.set(trimmed);
+          this.isAuthenticated.set(true);
+        }),
+        map(() => true),
+        catchError((err) => {
+          this.authErrorMessage.set(this.formatAuthHttpError(err));
+          return of(false);
+        })
+      );
   }
 
-  register(username: string, email: string, password: string): Promise<boolean> {
+  register(username: string, email: string, password: string): Observable<boolean> {
     if (!username.trim() || !email.trim() || !password.trim()) {
-      return Promise.resolve(false);
+      return of(false);
     }
+
+    this.authErrorMessage.set('');
 
     const body = { username: username.trim(), email: email.trim(), password };
 
     return this.http
-      .post<{ id: number; username: string; email: string }>('/api/auth/register/', body)
-      .toPromise()
-      .then((response) => {
-        if (response) {
-          this.userName.set(response.username);
+      .post<{
+        user: { id: number; username: string; email: string };
+        tokens: { access: string; refresh: string };
+      }>('/api/auth/register/', body)
+      .pipe(
+        tap((response) => {
+          this.authTokens.setTokens(response.tokens.access, response.tokens.refresh);
+          this.authTokens.setStoredUsername(response.user.username);
+          this.userName.set(response.user.username);
           this.isAuthenticated.set(true);
-          return true;
-        }
-        return false;
-      })
-      .catch(() => false);
+        }),
+        map(() => true),
+        catchError((err) => {
+          this.authErrorMessage.set(this.formatAuthHttpError(err));
+          return of(false);
+        })
+      );
   }
 
   logout(): void {
-    this.isAuthenticated.set(false);
-    this.favoriteIds.set([]);
-    this.userRatings.set({});
+    const refresh = this.authTokens.getRefresh();
+    if (refresh) {
+      this.http.post('/api/auth/logout/', { refresh }).subscribe({
+        next: () => this.authTokens.clear(),
+        error: () => this.authTokens.clear()
+      });
+    } else {
+      this.authTokens.clear();
+    }
   }
 
   ensureCatalogLoaded(): void {
@@ -411,5 +463,54 @@ export class MangaStoreService {
       updated: detail.updated || existing?.updated || 'Unknown update date',
       latestChapter: detail.chapterList?.[0]?.name || existing?.latestChapter || 'No chapters yet'
     };
+  }
+
+  private formatAuthHttpError(err: unknown): string {
+    if (err instanceof HttpErrorResponse) {
+      if (err.status === 0) {
+        return 'Нет ответа от сервера. Запустите Django: cd backend && python manage.py runserver 8000, затем ng serve (с proxy).';
+      }
+
+      const body = err.error;
+
+      if (typeof body === 'string' && body.trim()) {
+        try {
+          return this.formatDjangoErrorBody(JSON.parse(body) as Record<string, unknown>);
+        } catch {
+          return body;
+        }
+      }
+
+      if (body && typeof body === 'object') {
+        return this.formatDjangoErrorBody(body as Record<string, unknown>);
+      }
+
+      return `Ошибка сервера (${err.status}).`;
+    }
+
+    return 'Не удалось выполнить запрос.';
+  }
+
+  private formatDjangoErrorBody(body: Record<string, unknown>): string {
+    if (typeof body.detail === 'string') {
+      return body.detail;
+    }
+
+    if (Array.isArray(body.non_field_errors) && body.non_field_errors.length) {
+      return String(body.non_field_errors[0]);
+    }
+
+    const key = Object.keys(body)[0];
+    if (key) {
+      const val = body[key];
+      if (Array.isArray(val) && val.length) {
+        return `${key}: ${val[0]}`;
+      }
+      if (typeof val === 'string') {
+        return `${key}: ${val}`;
+      }
+    }
+
+    return 'Запрос отклонён сервером.';
   }
 }

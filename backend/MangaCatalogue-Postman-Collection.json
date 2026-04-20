@@ -1,108 +1,416 @@
 {
   "info": {
     "name": "Manga Catalogue Django API",
+    "description": "Full API coverage for MangaBase backend (Django + DRF + JWT). Set collection variables after Login or Register.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "access_token", "value": "" },
+    { "key": "refresh_token", "value": "" },
+    { "key": "manga_id", "value": "1" }
+  ],
   "item": [
     {
-      "name": "Login",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password123\"\n}"
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demo_reader\",\n  \"email\": \"demo@example.com\",\n  \"password\": \"securepass123\"\n}"
+            },
+            "url": "{{base_url}}/api/auth/register/"
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"demo_reader\",\n  \"email\": \"demo@example.com\",\n  \"password\": \"securepass123\"\n}"
+                },
+                "url": "{{base_url}}/api/auth/register/"
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"user\": {\n    \"id\": 2,\n    \"username\": \"demo_reader\",\n    \"email\": \"demo@example.com\"\n  },\n  \"tokens\": {\n    \"refresh\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example_refresh\",\n    \"access\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example_access\"\n  }\n}"
+            },
+            {
+              "name": "400 Validation error",
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"username\": [\"A user with that username already exists.\"]\n}"
+            }
+          ]
         },
-        "url": {
-          "raw": "http://localhost:8000/api/auth/login/",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8000",
-          "path": ["api", "auth", "login", ""]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Get Manga List",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8000/api/manga/",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8000",
-          "path": ["api", "manga", ""]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Create Manga",
-      "request": {
-        "method": "POST",
-        "header": [
-          {"key": "Content-Type", "value": "application/json"},
-          {"key": "Authorization", "value": "Bearer {{access_token}}"}
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"title\": \"My New Manga\",\n  \"author_id\": 1,\n  \"genre_ids\": [1, 2],\n  \"status\": \"ONGOING\",\n  \"summary\": \"A new adventure story.\",\n  \"rating\": 4.5,\n  \"chapters\": 12,\n  \"published\": \"2024-present\"\n}"
+        {
+          "name": "Login (JWT obtain pair)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demo_reader\",\n  \"password\": \"securepass123\"\n}"
+            },
+            "url": "{{base_url}}/api/auth/login/"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"refresh\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example_refresh\",\n  \"access\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example_access\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"detail\": \"No active account found with the given credentials\"\n}"
+            }
+          ]
         },
-        "url": {
-          "raw": "http://localhost:8000/api/manga/",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8000",
-          "path": ["api", "manga", ""]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Create Review",
-      "request": {
-        "method": "POST",
-        "header": [
-          {"key": "Content-Type", "value": "application/json"},
-          {"key": "Authorization", "value": "Bearer {{access_token}}"}
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"score\": 9,\n  \"comment\": \"Very engaging story.\"\n}"
+        {
+          "name": "Refresh access token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "url": "{{base_url}}/api/auth/refresh/"
+          },
+          "response": [
+            {
+              "name": "200 OK (with rotation)",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"access\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.new_access\",\n  \"refresh\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.new_refresh\"\n}"
+            },
+            {
+              "name": "401 Token blacklisted",
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Token is blacklisted\",\n  \"code\": \"token_not_valid\"\n}"
+            }
+          ]
         },
-        "url": {
-          "raw": "http://localhost:8000/api/manga/1/reviews/",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8000",
-          "path": ["api", "manga", "1", "reviews", ""]
+        {
+          "name": "Logout (blacklist refresh)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "url": "{{base_url}}/api/auth/logout/"
+          },
+          "response": [
+            {
+              "name": "205 Reset Content",
+              "status": "Reset Content",
+              "code": 205,
+              "_postman_previewlanguage": "plain",
+              "header": [],
+              "body": ""
+            },
+            {
+              "name": "400 Missing refresh",
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Refresh token required.\"\n}"
+            }
+          ]
         }
-      },
-      "response": []
+      ]
     },
     {
-      "name": "User Reading List",
-      "request": {
-        "method": "GET",
-        "header": [
-          {"key": "Authorization", "value": "Bearer {{access_token}}"}
-        ],
-        "url": {
-          "raw": "http://localhost:8000/api/reading-list/",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8000",
-          "path": ["api", "reading-list", ""]
+      "name": "Manga",
+      "item": [
+        {
+          "name": "List manga (GET)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/manga/"
+          },
+          "response": [
+            {
+              "name": "200 OK - array",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"Sample Manga\",\n    \"author\": \"Famous Author\",\n    \"genres\": [\n      { \"id\": 1, \"name\": \"Action\", \"description\": \"\" }\n    ],\n    \"status\": \"ONGOING\",\n    \"summary\": \"A sample story.\",\n    \"rating\": 4.5,\n    \"chapters\": 24,\n    \"published\": \"2024-present\",\n    \"created_by\": \"demo_reader\",\n    \"created_at\": \"2026-04-20T12:00:00Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Create manga (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"My New Manga\",\n  \"author_id\": 1,\n  \"genre_ids\": [1],\n  \"status\": \"ONGOING\",\n  \"summary\": \"A new adventure story.\",\n  \"rating\": 4.5,\n  \"chapters\": 12,\n  \"published\": \"2024-present\"\n}"
+            },
+            "url": "{{base_url}}/api/manga/"
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 3,\n  \"title\": \"My New Manga\",\n  \"author\": \"Famous Author\",\n  \"genres\": [\n    { \"id\": 1, \"name\": \"Action\", \"description\": \"\" }\n  ],\n  \"status\": \"ONGOING\",\n  \"summary\": \"A new adventure story.\",\n  \"rating\": 4.5,\n  \"chapters\": 12,\n  \"published\": \"2024-present\",\n  \"created_by\": \"demo_reader\",\n  \"created_at\": \"2026-04-20T12:30:00Z\"\n}"
+            },
+            {
+              "name": "400 Validation",
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"author_id\": [\"Invalid pk \\\"999\\\" - object does not exist.\"]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Search manga",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/manga/search/?q=ninja"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 1,\n    \"title\": \"Ninja Chronicles\",\n    \"author\": \"Famous Author\",\n    \"genres\": [],\n    \"status\": \"ONGOING\",\n    \"summary\": \"\",\n    \"rating\": 4.2,\n    \"chapters\": 10,\n    \"published\": \"\",\n    \"created_by\": \"admin\",\n    \"created_at\": \"2026-04-20T10:00:00Z\"\n  }\n]"
+            },
+            {
+              "name": "400 Missing q",
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"error\": \"Query parameter q is required\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Manga detail (GET)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/manga/{{manga_id}}/"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 1,\n  \"title\": \"Sample Manga\",\n  \"author\": \"Famous Author\",\n  \"genres\": [{ \"id\": 1, \"name\": \"Action\", \"description\": \"\" }],\n  \"status\": \"ONGOING\",\n  \"summary\": \"A sample story.\",\n  \"rating\": 4.5,\n  \"chapters\": 24,\n  \"published\": \"2024-present\",\n  \"created_by\": \"demo_reader\",\n  \"created_at\": \"2026-04-20T12:00:00Z\"\n}"
+            },
+            {
+              "name": "404 Not found",
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Not found.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Manga update (PUT partial)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Sample Manga — Deluxe\",\n  \"summary\": \"Updated summary.\",\n  \"rating\": 4.8\n}"
+            },
+            "url": "{{base_url}}/api/manga/{{manga_id}}/"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 1,\n  \"title\": \"Sample Manga — Deluxe\",\n  \"author\": \"Famous Author\",\n  \"genres\": [{ \"id\": 1, \"name\": \"Action\", \"description\": \"\" }],\n  \"status\": \"ONGOING\",\n  \"summary\": \"Updated summary.\",\n  \"rating\": 4.8,\n  \"chapters\": 24,\n  \"published\": \"2024-present\",\n  \"created_by\": \"demo_reader\",\n  \"created_at\": \"2026-04-20T12:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Manga delete (DELETE)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": "{{base_url}}/api/manga/{{manga_id}}/"
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "plain",
+              "body": ""
+            }
+          ]
         }
-      },
-      "response": []
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "List reviews for manga",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/manga/{{manga_id}}/reviews/"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 1,\n    \"manga\": \"Sample Manga\",\n    \"user\": \"demo_reader\",\n    \"score\": 9,\n    \"comment\": \"Very engaging story.\",\n    \"created_at\": \"2026-04-20T14:00:00Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Create review",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 8,\n  \"comment\": \"Solid pacing and art.\"\n}"
+            },
+            "url": "{{base_url}}/api/manga/{{manga_id}}/reviews/"
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 2,\n  \"manga\": \"Sample Manga\",\n  \"user\": \"demo_reader\",\n  \"score\": 8,\n  \"comment\": \"Solid pacing and art.\",\n  \"created_at\": \"2026-04-20T15:00:00Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reading list",
+      "item": [
+        {
+          "name": "List my reading list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": "{{base_url}}/api/reading-list/"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 1,\n    \"user\": \"demo_reader\",\n    \"manga\": \"Sample Manga\",\n    \"status\": \"READING\",\n    \"added_at\": \"2026-04-20T16:00:00Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Add to reading list",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"manga_id\": 1,\n  \"status\": \"READING\"\n}"
+            },
+            "url": "{{base_url}}/api/reading-list/"
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 2,\n  \"user\": \"demo_reader\",\n  \"manga\": \"Sample Manga\",\n  \"status\": \"READING\",\n  \"added_at\": \"2026-04-20T16:05:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Remove from reading list",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"manga_id\": 1\n}"
+            },
+            "url": "{{base_url}}/api/reading-list/"
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "plain",
+              "body": ""
+            },
+            {
+              "name": "404 Entry not found",
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"detail\": \"Not found.\"\n}"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
