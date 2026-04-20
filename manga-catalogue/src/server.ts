@@ -8,7 +8,7 @@ import express from 'express';
 import { join } from 'node:path';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
-const mangaHookBaseUrl = process.env['MANGA_HOOK_API_BASE_URL'] || 'http://localhost:3000';
+const mangaHookBaseUrl = process.env['MANGA_HOOK_API_BASE_URL'] || 'http://127.0.0.1:3000';
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
