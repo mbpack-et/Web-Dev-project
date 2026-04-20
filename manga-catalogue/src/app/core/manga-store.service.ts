@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { firstValueFrom, forkJoin, of } from 'rxjs';
 
 import {
   ApiFilterOption,
@@ -16,6 +16,27 @@ import {
 
 const API_BASE_PATH = '/api/mangahook';
 const ACCENT_ROTATION: readonly PanelTone[] = ['plum', 'indigo', 'sky', 'gold'];
+const DEFAULT_PAGE_SIZE = 20;
+const SEARCH_SUGGESTION_LIMIT = 10;
+const SEARCH_SUGGESTION_MAX_PAGES = 4;
+
+interface FeedLoadOptions {
+  genres?: string[];
+  query?: string;
+  targetPage?: number;
+  reset?: boolean;
+}
+
+interface FeedStreamState {
+  page: number;
+  totalPages: number;
+}
+
+interface FeedStreamDescriptor {
+  key: string;
+  query?: string;
+  genre?: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class MangaStoreService {
@@ -28,15 +49,22 @@ export class MangaStoreService {
   readonly mangaLibrary = signal<MangaEntry[]>([]);
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
-  readonly currentPage = signal(1);
+  readonly currentPage = signal(0);
   readonly totalPages = signal(1);
+  readonly pageSize = signal(DEFAULT_PAGE_SIZE);
   readonly selectedGenre = signal('All Genres');
   readonly loadedOnce = signal(false);
   readonly favoriteIds = signal<string[]>([]);
   readonly userRatings = signal<Record<string, number>>({});
+  readonly activeSearchQuery = signal('');
+  readonly searchSuggestions = signal<MangaEntry[]>([]);
 
+  private readonly activeGenreFilters = signal<string[]>([]);
   private readonly availableCategoryOptions = signal<ApiFilterOption[]>([]);
   private readonly detailCache = signal<Record<string, MangaDetailResponse>>({});
+  private readonly streamStates = signal<Record<string, FeedStreamState>>({});
+  private readonly activeSourceKey = signal('');
+  private searchSuggestionRequestId = 0;
 
   readonly friends = computed<FriendEntry[]>(() => {
     const library = this.mangaLibrary();
@@ -93,6 +121,10 @@ export class MangaStoreService {
       .filter((item): item is MangaEntry => !!item);
   });
 
+  readonly hasMoreCatalogPages = computed(() =>
+    Object.values(this.streamStates()).some((state) => state.page < state.totalPages)
+  );
+
   login(userName: string, password: string): boolean {
     if (!userName.trim() || !password.trim()) {
       return false;
@@ -119,6 +151,7 @@ export class MangaStoreService {
           this.isAuthenticated.set(true);
           return true;
         }
+
         return false;
       })
       .catch(() => false);
@@ -135,7 +168,7 @@ export class MangaStoreService {
       return;
     }
 
-    this.loadCatalog();
+    this.loadCatalogPages({ targetPage: 1, reset: true });
   }
 
   ensureMangaDetail(id: string): void {
@@ -160,96 +193,43 @@ export class MangaStoreService {
       });
   }
 
-  loadCatalog(genre = this.selectedGenre(), page = 1): void {
-    this.isLoading.set(true);
-    this.errorMessage.set('');
-    this.selectedGenre.set(genre);
+  loadSearchSuggestions(query: string, genres?: string[]): void {
+    const normalizedQuery = this.normalizeQuery(query);
+    const normalizedGenres = this.normalizeGenres(genres);
+    const requestId = ++this.searchSuggestionRequestId;
 
-    let params = new HttpParams().set('page', String(page));
-    const apiGenre = genre === 'All Genres' ? null : genre;
-
-    if (apiGenre) {
-      params = params.set('category', apiGenre);
+    if (normalizedQuery.length < 2) {
+      this.searchSuggestions.set([]);
+      return;
     }
 
-    this.http
-      .get<MangaListResponse>(`${API_BASE_PATH}/mangaList`, { params })
-      .subscribe({
-        next: (response) => {
-          this.availableCategoryOptions.set(response.metaData.category ?? []);
-          this.totalPages.set(response.metaData.totalPages ?? 1);
-          this.currentPage.set(page);
+    void this.fetchSearchSuggestions(requestId, normalizedQuery, normalizedGenres);
+  }
 
-          const detailRequests = response.mangaList.map((item) =>
-            this.http.get<MangaDetailResponse>(`${API_BASE_PATH}/manga/${item.id}`).pipe(
-              catchError(() =>
-                of({
-                  imageUrl: item.image,
-                  name: item.title,
-                  author: 'Unknown author',
-                  description: item.description,
-                  year: null,
-                  status: 'Ongoing',
-                  updated: `Updated: ${new Date().getFullYear()}`,
-                  view: item.view,
-                  genres: apiGenre ? [apiGenre] : [],
-                  chapterList: []
-                } satisfies MangaDetailResponse)
-              ),
-              catchError(() => of(null))
-            )
-          );
+  loadCatalogPages(options?: FeedLoadOptions): void {
+    const normalizedGenres = this.normalizeGenres(options?.genres);
+    const normalizedQuery = this.normalizeQuery(options?.query);
+    const targetPage = Math.max(1, options?.targetPage ?? 1);
+    const sourceKey = this.buildSourceKey(normalizedQuery, normalizedGenres);
+    const shouldReset =
+      Boolean(options?.reset) ||
+      sourceKey !== this.activeSourceKey() ||
+      targetPage < this.currentPage();
 
-          if (!detailRequests.length) {
-            this.mangaLibrary.set([]);
-            this.loadedOnce.set(true);
-            this.isLoading.set(false);
-            return;
-          }
+    if (this.isLoading()) {
+      return;
+    }
 
-          forkJoin(detailRequests).subscribe({
-            next: (details) => {
-              this.detailCache.update((cache) => ({
-                ...cache,
-                ...response.mangaList.reduce<Record<string, MangaDetailResponse>>((accumulator, item, index) => {
-                  const detail = details[index];
+    if (!shouldReset && !this.needsAdditionalPages(normalizedQuery, normalizedGenres, targetPage)) {
+      return;
+    }
 
-                  if (detail) {
-                    accumulator[item.id] = detail;
-                  }
-
-                  return accumulator;
-                }, {})
-              }));
-
-              this.mangaLibrary.set(
-                response.mangaList.map((item, index) =>
-                  this.toMangaEntry(item, details[index] ?? null, index)
-                )
-              );
-              this.loadedOnce.set(true);
-              this.isLoading.set(false);
-            },
-            error: () => {
-              this.mangaLibrary.set([]);
-              this.loadedOnce.set(true);
-              this.isLoading.set(false);
-              this.errorMessage.set(
-                'The MangaHook catalog loaded, but item details could not be enriched.'
-              );
-            }
-          });
-        },
-        error: () => {
-          this.mangaLibrary.set([]);
-          this.totalPages.set(1);
-          this.loadedOnce.set(true);
-          this.isLoading.set(false);
-          this.errorMessage.set(
-            'MangaHook could not be reached. Start the backend on http://localhost:3000 or update the proxy target.'
-          );
-        }
-      });
+    void this.fetchCatalogFeed({
+      query: normalizedQuery,
+      genres: normalizedGenres,
+      targetPage,
+      reset: shouldReset
+    });
   }
 
   getMangaById(id: string): MangaEntry | null {
@@ -300,6 +280,262 @@ export class MangaStoreService {
     return this.mangaLibrary().filter((item) => item.status === status);
   }
 
+  private async fetchCatalogFeed(options: Required<FeedLoadOptions>): Promise<void> {
+    const sourceKey = this.buildSourceKey(options.query, options.genres);
+    const descriptors = this.buildStreamDescriptors(options.query, options.genres);
+    const nextLibrary = options.reset ? [] : [...this.mangaLibrary()];
+    const nextDetailCache = options.reset ? {} : { ...this.detailCache() };
+    const nextStreamStates = options.reset ? {} : { ...this.streamStates() };
+    const desiredMatchCount = Math.max(DEFAULT_PAGE_SIZE, options.targetPage * DEFAULT_PAGE_SIZE);
+
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+    this.activeSourceKey.set(sourceKey);
+    this.activeSearchQuery.set(options.query);
+    this.activeGenreFilters.set(options.genres);
+    this.selectedGenre.set(options.genres[0] ?? 'All Genres');
+
+    if (options.reset) {
+      this.currentPage.set(0);
+      this.totalPages.set(1);
+      this.pageSize.set(DEFAULT_PAGE_SIZE);
+    }
+
+    try {
+      for (const descriptor of descriptors) {
+        const currentState = nextStreamStates[descriptor.key] ?? {
+          page: 0,
+          totalPages: Number.POSITIVE_INFINITY
+        };
+
+        while (currentState.page < options.targetPage && currentState.page < currentState.totalPages) {
+          await this.appendSourcePage(descriptor, nextLibrary, nextDetailCache, nextStreamStates, options.query);
+        }
+      }
+
+      while (
+        options.genres.length > 0 &&
+        this.countGenreMatches(nextLibrary, options.genres) < desiredMatchCount
+      ) {
+        const loadableDescriptors = descriptors.filter((descriptor) => {
+          const state = nextStreamStates[descriptor.key];
+          return state && state.page < state.totalPages;
+        });
+
+        if (!loadableDescriptors.length) {
+          break;
+        }
+
+        for (const descriptor of loadableDescriptors) {
+          await this.appendSourcePage(descriptor, nextLibrary, nextDetailCache, nextStreamStates, options.query);
+
+          if (this.countGenreMatches(nextLibrary, options.genres) >= desiredMatchCount) {
+            break;
+          }
+        }
+      }
+
+      this.mangaLibrary.set(nextLibrary);
+      this.detailCache.set(nextDetailCache);
+      this.streamStates.set(nextStreamStates);
+      this.syncProgressFromStates(nextStreamStates);
+      this.loadedOnce.set(true);
+
+      if (!nextLibrary.length) {
+        this.currentPage.set(1);
+      }
+    } catch {
+      if (options.reset) {
+        this.mangaLibrary.set([]);
+        this.detailCache.set({});
+        this.streamStates.set({});
+        this.currentPage.set(1);
+        this.totalPages.set(1);
+      }
+
+      this.loadedOnce.set(true);
+      this.errorMessage.set(
+        'MangaHook could not be reached. Start the backend on http://localhost:3000 or update the proxy target.'
+      );
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  private async fetchSearchSuggestions(
+    requestId: number,
+    query: string,
+    genres: string[]
+  ): Promise<void> {
+    const suggestions: MangaEntry[] = [];
+    const seenIds = new Set<string>();
+    const descriptor: FeedStreamDescriptor = { key: `search:${query}`, query };
+
+    try {
+      let page = 1;
+      let totalPages = 1;
+
+      while (
+        page <= totalPages &&
+        page <= SEARCH_SUGGESTION_MAX_PAGES &&
+        suggestions.length < SEARCH_SUGGESTION_LIMIT
+      ) {
+        const response = await firstValueFrom(this.requestSourcePage(descriptor, page));
+        totalPages = response.metaData.totalPages ?? page;
+        const details = await this.fetchPageDetails(response.mangaList, null);
+
+        for (let index = 0; index < response.mangaList.length; index += 1) {
+          const entry = this.toMangaEntry(response.mangaList[index], details[index] ?? null, index);
+
+          if (seenIds.has(entry.id)) {
+            continue;
+          }
+
+          if (genres.length && !genres.every((genre) => entry.genre.includes(genre))) {
+            continue;
+          }
+
+          seenIds.add(entry.id);
+          suggestions.push(entry);
+
+          if (suggestions.length >= SEARCH_SUGGESTION_LIMIT) {
+            break;
+          }
+        }
+
+        page += 1;
+      }
+    } catch {
+      if (requestId === this.searchSuggestionRequestId) {
+        this.searchSuggestions.set([]);
+      }
+      return;
+    }
+
+    if (requestId === this.searchSuggestionRequestId) {
+      this.searchSuggestions.set(suggestions);
+    }
+  }
+
+  private needsAdditionalPages(query: string, genres: string[], targetPage: number): boolean {
+    const descriptors = this.buildStreamDescriptors(query, genres);
+    const states = this.streamStates();
+
+    return descriptors.some((descriptor) => {
+      const state = states[descriptor.key];
+
+      if (!state) {
+        return true;
+      }
+
+      return state.page < targetPage && state.page < state.totalPages;
+    });
+  }
+
+  private buildStreamDescriptors(query: string, genres: string[]): FeedStreamDescriptor[] {
+    if (query) {
+      return [{ key: `search:${query}`, query }];
+    }
+
+    if (!genres.length) {
+      return [{ key: 'genre:all', genre: undefined }];
+    }
+
+    return genres.map((genre) => ({ key: `genre:${genre}`, genre }));
+  }
+
+  private requestSourcePage(descriptor: FeedStreamDescriptor, page: number) {
+    if (descriptor.query) {
+      const params = new HttpParams().set('page', String(page));
+      return this.http.get<MangaListResponse>(
+        `${API_BASE_PATH}/search/${encodeURIComponent(descriptor.query)}`,
+        { params }
+      );
+    }
+
+    let params = new HttpParams().set('page', String(page));
+
+    if (descriptor.genre) {
+      params = params.set('category', descriptor.genre);
+    }
+
+    return this.http.get<MangaListResponse>(`${API_BASE_PATH}/mangaList`, { params });
+  }
+
+  private async appendSourcePage(
+    descriptor: FeedStreamDescriptor,
+    nextLibrary: MangaEntry[],
+    nextDetailCache: Record<string, MangaDetailResponse>,
+    nextStreamStates: Record<string, FeedStreamState>,
+    activeQuery: string
+  ): Promise<void> {
+    const currentState = nextStreamStates[descriptor.key] ?? {
+      page: 0,
+      totalPages: Number.POSITIVE_INFINITY
+    };
+    const pageToLoad = currentState.page + 1;
+    const response = await firstValueFrom(this.requestSourcePage(descriptor, pageToLoad));
+
+    currentState.page = pageToLoad;
+    currentState.totalPages = response.metaData.totalPages ?? pageToLoad;
+    nextStreamStates[descriptor.key] = currentState;
+
+    if (!activeQuery) {
+      this.availableCategoryOptions.set(response.metaData.category ?? this.availableCategoryOptions());
+    }
+
+    if (response.mangaList.length) {
+      this.pageSize.set(response.mangaList.length);
+    }
+
+    const details = await this.fetchPageDetails(response.mangaList, descriptor.genre ?? null);
+
+    for (let index = 0; index < response.mangaList.length; index += 1) {
+      const detail = details[index];
+
+      if (detail) {
+        nextDetailCache[response.mangaList[index].id] = detail;
+      }
+    }
+
+    const pageEntries = response.mangaList.map((item, index) =>
+      this.toMangaEntry(item, details[index] ?? null, nextLibrary.length + index)
+    );
+
+    this.mergeCatalogPage(nextLibrary, pageEntries);
+  }
+
+  private fetchPageDetails(
+    mangaList: MangaListResponse['mangaList'],
+    fallbackGenre: string | null
+  ): Promise<Array<MangaDetailResponse | null>> {
+    if (!mangaList.length) {
+      return Promise.resolve([]);
+    }
+
+    const detailRequests = mangaList.map((item) =>
+      this.http.get<MangaDetailResponse>(`${API_BASE_PATH}/manga/${item.id}`).pipe(
+        catchError(() =>
+          of({
+            imageUrl: item.image,
+            name: item.title,
+            author: 'Unknown author',
+            description: item.description,
+            year: null,
+            status: 'Ongoing',
+            updated: `Updated: ${new Date().getFullYear()}`,
+            view: item.view,
+            genres: fallbackGenre ? [fallbackGenre] : [],
+            chapterList: []
+          } satisfies MangaDetailResponse)
+        ),
+        catchError(() => of(null))
+      )
+    );
+
+    return firstValueFrom(forkJoin(detailRequests));
+  }
+
   private upsertMangaFromDetail(id: string, detail: MangaDetailResponse): void {
     const existing = this.getMangaById(id);
     const enrichedEntry = this.buildEntryFromDetail(id, detail, existing);
@@ -322,8 +558,8 @@ export class MangaStoreService {
     detail: MangaDetailResponse | null,
     index: number
   ): MangaEntry {
-    const genres = detail?.genres?.length ? detail.genres : this.fallbackGenres(summary);
-    const popularitySource = detail?.view ?? summary.view;
+    const genres = detail?.genres?.length ? detail.genres : this.fallbackGenres();
+    const popularitySource = detail?.view ?? summary.view ?? '0';
 
     return {
       id: summary.id,
@@ -332,14 +568,63 @@ export class MangaStoreService {
       genre: genres,
       year: detail?.year ?? this.extractYear(detail?.updated),
       popularity: this.parseViewCount(popularitySource),
-      chapters: detail?.chapterList?.length || this.extractChapterCount(summary.chapter),
+      chapters: detail?.chapterList?.length || this.extractChapterCount(summary.chapter ?? ''),
       status: this.deriveShelfStatus(detail?.status, index),
       synopsis: detail?.description || summary.description || 'No description provided by MangaHook.',
       accent: ACCENT_ROTATION[index % ACCENT_ROTATION.length],
       author: detail?.author || 'Unknown author',
       updated: detail?.updated || 'Unknown update date',
-      latestChapter: detail?.chapterList?.[0]?.name || summary.chapter
+      latestChapter: detail?.chapterList?.[0]?.name || summary.chapter || 'No chapters yet'
     };
+  }
+
+  private syncProgressFromStates(states: Record<string, FeedStreamState>): void {
+    const values = Object.values(states);
+
+    if (!values.length) {
+      this.currentPage.set(1);
+      this.totalPages.set(1);
+      return;
+    }
+
+    this.currentPage.set(Math.max(...values.map((state) => state.page)));
+    this.totalPages.set(Math.max(...values.map((state) => state.totalPages)));
+  }
+
+  private mergeCatalogPage(existingEntries: MangaEntry[], nextEntries: MangaEntry[]): void {
+    const libraryById = new Map(existingEntries.map((item) => [item.id, item]));
+
+    for (const entry of nextEntries) {
+      libraryById.set(entry.id, entry);
+    }
+
+    existingEntries.splice(0, existingEntries.length, ...Array.from(libraryById.values()));
+  }
+
+  private countGenreMatches(entries: MangaEntry[], genres: string[]): number {
+    if (!genres.length) {
+      return entries.length;
+    }
+
+    return entries.filter((entry) => genres.every((genre) => entry.genre.includes(genre))).length;
+  }
+
+  private buildSourceKey(query: string, genres: string[]): string {
+    if (query) {
+      return `search:${query}`;
+    }
+
+    return genres.length ? `genres:${genres.join('|')}` : 'genres:all';
+  }
+
+  private normalizeGenres(genres?: string[]): string[] {
+    return [...new Set((genres ?? []).filter((genre) => genre && genre !== 'All Genres'))].sort((a, b) =>
+      a.localeCompare(b)
+    );
+  }
+
+  private normalizeQuery(query?: string): string {
+    return query?.trim() ?? '';
   }
 
   private getOptionLabel(option: ApiFilterOption): string {
@@ -362,6 +647,7 @@ export class MangaStoreService {
     const value = Number(match[1]);
     const multiplier =
       match[2] === 'B' ? 1_000_000_000 : match[2] === 'M' ? 1_000_000 : match[2] === 'K' ? 1_000 : 1;
+
     return Math.round(value * multiplier);
   }
 
@@ -370,9 +656,14 @@ export class MangaStoreService {
     return matchedChapter ? Math.round(Number(matchedChapter[1])) : 0;
   }
 
-  private fallbackGenres(summary: MangaListResponse['mangaList'][number]): string[] {
-    const selectedGenre = this.selectedGenre();
-    return selectedGenre === 'All Genres' ? ['Unknown'] : [selectedGenre];
+  private fallbackGenres(): string[] {
+    const selectedGenres = this.activeGenreFilters();
+
+    if (selectedGenres.length) {
+      return selectedGenres;
+    }
+
+    return ['Unknown'];
   }
 
   private deriveShelfStatus(
