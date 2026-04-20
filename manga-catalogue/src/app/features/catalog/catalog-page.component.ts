@@ -279,7 +279,7 @@ export class CatalogPageComponent implements OnInit, OnDestroy {
   readonly isSearchFocused = signal(false);
   readonly isFilterPanelOpen = signal(true);
 
-  private searchDebounceHandle: ReturnType<typeof setTimeout> | null = null;
+  private searchDebounceHandle: number | null = null;
 
   readonly activeQuery = computed(() => this.searchQuery().trim());
   readonly yearOptions = computed(() => [

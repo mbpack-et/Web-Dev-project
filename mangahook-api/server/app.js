@@ -1,11 +1,13 @@
 const ApiKey = require("./middleware/apiKeyMiddleware")
 const app = require("express")()
 const bodyParser = require("body-parser")
+const cors = require("cors")
 const mangaRouter = require("./routes/mangaRouter")
 const mangaListRouter = require("./routes/mangaListRouter")
 const mangaSearch = require("./routes/mangaSearch")
 
 app.use(bodyParser.json())
+app.use(cors())
 require('dotenv').config()
 
 app.use(ApiKey)
